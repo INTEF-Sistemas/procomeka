@@ -107,11 +107,13 @@ El sistema se organiza en capas desacopladas con contratos explícitos entre ell
 3. **Jobs idempotentes**: toda importación puede reejecutarse sin efectos no deseados
 4. **Observabilidad desde el inicio**: logs estructurados, métricas, trazas en todas las capas
 5. **Accesibilidad como requisito**: no como añadido posterior
+6. **Entorno estático funcional por PR**: Capacidad de generar una versión estática de la plataforma (usando una base de datos local en cliente como PGLite o sql.js) para probar el sistema desde el navegador en cada Pull Request de forma ligera, sin despliegues de backend.
 
 ## ADRs relacionadas
 
 - [ADR-0001](../negocio/decisiones/0001-typescript-bun-como-stack-base.md): TypeScript + Bun como stack base
-- ADR-0002: Framework HTTP para API (pendiente)
-- ADR-0003: Framework frontend (pendiente)
-- ADR-0004: Base de datos principal (pendiente)
-- ADR-0005: Motor de búsqueda (pendiente)
+- [ADR-0002](../negocio/decisiones/0002-preview-estatico-prs-con-sqlite.md): Preview estático de PRs (aceptado)
+- ADR-0003: Framework HTTP para API (pendiente)
+- ADR-0004: Framework frontend (pendiente)
+- ADR-0005: Base de datos principal (pendiente)
+- ADR-0006: Motor de búsqueda (pendiente)
