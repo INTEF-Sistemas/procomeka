@@ -1,1 +1,141 @@
-# procomeka
+# Procomeka
+
+Sustituto moderno de Procomún: plataforma de recursos educativos abiertos orientada a catalogación, descubrimiento, reutilización, curación, interoperabilidad y publicación.
+
+## Stack tecnológico base
+
+- **Lenguaje**: TypeScript (strict mode en toda la pila)
+- **Runtime**: Bun (API, scripts, tests, builds)
+- El resto de tecnologías por capa se decide mediante ADRs
+
+## Estructura del repositorio
+
+```
+CLAUDE.md                          # Punto de entrada para agentes IA
+AGENTS.md                          # Constitución del proyecto: reglas, roles y flujo de trabajo
+
+.agents/skills/                    # Skills especializados (formato agentskills.io)
+├── empresa-y-producto/            # Visión, objetivos, usuarios, prioridades
+├── direccion-de-plataforma/       # Arquitectura de capas e integración de servicios
+├── arquitectura-solucion/         # Diseño técnico trazable desde requisitos
+├── evaluacion-tecnologica/        # Análisis comparativo y ADRs de tecnología
+├── metadatos-y-curacion/          # Esquemas, taxonomías y flujo editorial
+├── ingestas-y-migraciones/        # Importaciones, mapeos y migración desde Procomún
+├── busqueda-y-descubrimiento/     # Búsqueda, facetas, ranking y navegación
+├── frontend-ux-accesibilidad/     # Experiencia pública y editorial (WCAG)
+├── backend-api-servicios/         # Servicios, endpoints y lógica de negocio
+├── interoperabilidad-educativa/   # OAI-PMH, LTI, estándares y conectores
+├── seguridad-privacidad-legal/    # RGPD, licencias, moderación y auditoría
+├── devops-sre/                    # Entornos, CI/CD, backups y observabilidad
+├── qa-validacion/                 # Planes de prueba, aceptación y regresión
+├── analitica-y-observabilidad/    # Métricas de uso, calidad y salud del sistema
+└── documentacion-y-roadmap/       # Coherencia documental, ADRs y estado
+
+docs/
+├── negocio/
+│   ├── vision.md                  # Propósito, usuarios y métricas de éxito
+│   ├── mapa-de-capacidades.md     # Todas las capacidades funcionales priorizadas
+│   ├── glosario.md                # Términos canónicos del proyecto
+│   └── decisiones/                # ADRs (Architecture Decision Records)
+│       └── 0001-typescript-bun-como-stack-base.md
+└── producto/
+    ├── roadmap.md                 # Fases y estado de épicas
+    ├── arquitectura.md            # Diagrama de capas y principios de diseño
+    └── modelo-de-dominio.md       # Entidades principales en TypeScript
+
+docs/epics/                        # Épicas y features (se crean al iniciar trabajo)
+docs/hotfixes/                     # Correcciones urgentes
+docs/casos/                        # Análisis sin implementación
+```
+
+## Cómo funciona el sistema de agentes
+
+Este repositorio usa un sistema de **empresa virtual** donde cada rol es un skill especializado que la IA activa según la tarea.
+
+### Activar un rol en Claude Code
+
+```
+@.agents/skills/empresa-y-producto/SKILL.md
+```
+
+### Iniciar una nueva épica
+
+```
+Quiero iniciar una nueva épica para el sustituto de Procomún.
+
+Usa estos roles:
+- @.agents/skills/empresa-y-producto/SKILL.md
+- @.agents/skills/direccion-de-plataforma/SKILL.md
+- @.agents/skills/evaluacion-tecnologica/SKILL.md
+
+Objetivo:
+[describe aquí la idea]
+
+Necesito:
+1. definición del problema
+2. usuarios afectados
+3. decisión inicial de stack para esta capa
+4. propuesta de épica
+5. riesgos
+6. siguiente paso recomendado
+```
+
+### Evaluar una tecnología
+
+```
+Evalúa opciones para [capa del sistema] y decide cuál usar.
+
+Usa:
+@.agents/skills/evaluacion-tecnologica/SKILL.md
+@.agents/skills/direccion-de-plataforma/SKILL.md
+
+Quiero: análisis comparativo + ADR lista para firmar.
+```
+
+### Diseñar una feature completa
+
+```
+Diseña esta feature: [descripción]
+
+Produce:
+- requirements.md
+- design.md
+- tasks.md
+
+Usa:
+@.agents/skills/arquitectura-solucion/SKILL.md
+@.agents/skills/metadatos-y-curacion/SKILL.md
+@.agents/skills/backend-api-servicios/SKILL.md
+@.agents/skills/qa-validacion/SKILL.md
+```
+
+### Planificar la migración desde Procomún
+
+```
+Planifica la migración de contenidos desde Procomún legacy.
+
+Usa:
+@.agents/skills/ingestas-y-migraciones/SKILL.md
+@.agents/skills/metadatos-y-curacion/SKILL.md
+@.agents/skills/interoperabilidad-educativa/SKILL.md
+```
+
+## ADRs pendientes
+
+Antes de escribir código de negocio deben resolverse estas decisiones:
+
+| ADR | Capa | Estado |
+|-----|------|--------|
+| [ADR-0001](docs/negocio/decisiones/0001-typescript-bun-como-stack-base.md) | Stack base | Aceptado |
+| ADR-0002 | Framework HTTP para API | Pendiente |
+| ADR-0003 | Framework frontend | Pendiente |
+| ADR-0004 | Base de datos principal | Pendiente |
+| ADR-0005 | Motor de búsqueda | Pendiente |
+
+## Convenciones
+
+- Toda decisión técnica relevante tiene una ADR en `docs/negocio/decisiones/`
+- Toda épica tiene su carpeta en `docs/epics/{nombre-epica}/`
+- Toda feature produce al menos `requirements.md`, `design.md` y `tasks.md`
+- Los tests se ejecutan con `bun test`
+- El código es TypeScript strict en toda la pila
