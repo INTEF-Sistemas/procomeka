@@ -184,3 +184,11 @@ Tras completar una feature:
 2. actualizar el estado de la épica
 3. registrar decisiones técnicas si las hubo
 4. anotar riesgos abiertos y deuda técnica
+
+## Reglas Críticas para IA Autónoma (NUEVO)
+
+11. **Nunca borrar historial de estado global.** Debes usar `STATUS.md` para anotar el estado actual de tu tarea y traspasar el turno a otro agente.
+12. **Inmutabilidad.** Al actualizar `tasks.md` o diseños en markdown, no borres el contenido previo; añade secciones fechadas al final.
+13. **Uso de Plantillas.** Al crear una ADR nueva, copia obligatoriamente la plantilla de `.templates/adr-template.md`.
+14. **Validación ESTRICTA con Testing.** Ningún agente puede marcar una tarea de código como "Completada" basándose en suposición. La validación requiere obligatoriamente: crear un test automatizado (TypeScript) y ejecutar `bun test` hasta que la salida sea exitosa.
+15. **Estructura del Código.** El código fuente nunca va en la raíz. Solo puede crearse en las carpetas `apps/` o `packages/` designadas.
