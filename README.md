@@ -139,3 +139,31 @@ Antes de escribir código de negocio deben resolverse estas decisiones:
 - Toda feature produce al menos `requirements.md`, `design.md` y `tasks.md`
 - Los tests se ejecutan con `bun test`
 - El código es TypeScript strict en toda la pila
+
+## Comandos y Desarrollo (Makefile)
+
+Para agilizar el desarrollo, hemos implementado un \`Makefile\`. Puedes usar:
+
+- \`make deps\`: Instala las dependencias usando \`bun install\`.
+- \`make up\`: Ejecuta el entorno de desarrollo (\`bun run dev\`).
+- \`make clean\`: Limpia los directorios temporales, \`.coverage\` y \`node_modules\`.
+- \`make lint\`: Comprueba reglas de código usando **Biome**.
+- \`make format\`: Aplica el formateado de código automáticamente con **Biome**.
+- \`make test\`: Ejecuta todos los tests y valida el coverage general.
+- \`make test-unit\`: Ejecuta los tests unitarios.
+- \`make test-integration\`: Ejecuta los tests de integración.
+- \`make test-e2e\`: Ejecuta los tests end-to-end (e2e).
+- \`make check-coverage\`: Asegura que el coverage de las líneas sea mayor o igual al **90%**.
+
+## Monorepo y Workspaces
+
+Este proyecto está configurado como un **Monorepo** con \`bun\`. Todo el código principal, servicios, aplicaciones web, etc., vivirá dentro de la carpeta \`/apps\`. Esto permite escalar el proyecto a medida que se añadan más capas (ej: frontend y backend en carpetas distintas que comparten código).
+
+## Linter y Formateador
+
+Utilizamos [Biome](https://biomejs.dev/) por su rendimiento y simplicidad al agrupar linter y formateador en un mismo binario nativo. Todo se configura a través del archivo \`biome.json\`.
+
+## Pruebas y CI
+
+Empleamos el test-runner nativo de \`bun test\`.
+Todos los tests son forzados a ejecutarse en un entorno CI automatizado con **GitHub Actions**, garantizando que nunca se haga un merge si el coverage global no alcanza el 90%.

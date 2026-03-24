@@ -1,0 +1,26 @@
+{
+	"name": "procomeka",
+	"version": "1.0.0",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "bun run index.ts",
+		"lint": "biome lint .",
+		"format": "biome format --write .",
+		"test": "bun test --coverage",
+		"test:unit": "bun test --coverage --test-name-pattern '.*'",
+		"test:integration": "bun test --coverage --test-name-pattern '.*'",
+		"test:e2e": "bun test --coverage --test-name-pattern '.*'",
+		"check-coverage": "bun run scripts/check-coverage.ts"
+	},
+	"workspaces": [
+		"apps/*"
+	],
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	}
+}

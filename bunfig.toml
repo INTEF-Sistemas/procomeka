@@ -1,0 +1,2 @@
+[test]
+# We'll rely on bun's automatic discovery, but filtering in the Makefile directly
