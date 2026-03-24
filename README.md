@@ -11,10 +11,24 @@ Sustituto moderno de Procomún: plataforma de recursos educativos abiertos orien
 ## Estructura del repositorio
 
 ```
+STATUS.md                          # Tablero de Estado Global de los agentes (Orquestador)
 CLAUDE.md                          # Punto de entrada para agentes IA
 AGENTS.md                          # Constitución del proyecto: reglas, roles y flujo de trabajo
 
+.templates/                        # Plantillas obligatorias para agentes
+├── adr-template.md                # Plantilla para ADRs
+
+apps/                              # Código fuente principal (Frontend, API, Workers)
+├── api/                           # Backend API REST
+├── frontend/                      # UI pública
+└── workers/                       # Procesamiento asíncrono
+
+packages/                          # Librerías compartidas
+├── core-domain/                   # Lógica de dominio y tipos
+└── ui-lib/                        # Componentes UI compartidos
+
 .agents/skills/                    # Skills especializados (formato agentskills.io)
+├── project-manager/               # Coordinador y orquestador de estado global
 ├── empresa-y-producto/            # Visión, objetivos, usuarios, prioridades
 ├── direccion-de-plataforma/       # Arquitectura de capas e integración de servicios
 ├── arquitectura-solucion/         # Diseño técnico trazable desde requisitos
@@ -134,7 +148,7 @@ Antes de escribir código de negocio deben resolverse estas decisiones:
 
 ## Convenciones
 
-- Toda decisión técnica relevante tiene una ADR en `docs/negocio/decisiones/`
+- Toda decisión técnica relevante tiene una ADR en `docs/negocio/decisiones/` (usando la plantilla en `.templates/adr-template.md`)
 - Toda épica tiene su carpeta en `docs/epics/{nombre-epica}/`
 - Toda feature produce al menos `requirements.md`, `design.md` y `tasks.md`
 - Los tests se ejecutan con `bun test`
