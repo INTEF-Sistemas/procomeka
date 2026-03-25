@@ -10,8 +10,7 @@ deps:
 	$(BUN) install
 	$(BUN) x playwright install --with-deps
 
-up: deps
-	-@$(BUN) run --filter '@procomeka/cli' cli -- seed 2>/dev/null
+up: deps seed
 	$(BUN) run dev
 
 up-api:

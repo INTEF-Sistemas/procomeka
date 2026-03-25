@@ -6,10 +6,5 @@
 	"scripts": {
 		"cli": "bun run src/index.ts",
 		"test": "bun test"
-	},
-	"dependencies": {
-		"@procomeka/db": "workspace:*",
-		"better-auth": "^1.5.0",
-		"drizzle-orm": "^0.44.0"
 	}
 }

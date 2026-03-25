@@ -1,5 +1,4 @@
-import { drizzle } from "drizzle-orm/bun-sql";
-import { user, account } from "@procomeka/db/schema";
+import { Database } from "bun:sqlite";
 
 function parseArgs(args: string[]): Record<string, string> {
 	const result: Record<string, string> = {};
@@ -35,35 +34,24 @@ export async function userCreate(args: string[]) {
 		process.exit(1);
 	}
 
-	const dbUrl =
-		process.env.DATABASE_URL ?? "postgres://localhost:5432/procomeka";
-	const db = drizzle(dbUrl);
+	const dbPath = process.env.DB_PATH ?? `${import.meta.dir}/../../../../local.db`;
+	const db = new Database(dbPath);
 
 	const userId = crypto.randomUUID();
 	const accountId = crypto.randomUUID();
-
-	// Hash de contraseña con Bun nativo
 	const passwordHash = await Bun.password.hash(opts.password, {
 		algorithm: "argon2id",
 	});
 
 	try {
-		await db.insert(user).values({
-			id: userId,
-			email: opts.email,
-			name: opts.name,
-			role,
-			isActive: 1,
-			emailVerified: 0,
-		});
-
-		await db.insert(account).values({
-			id: accountId,
-			userId,
-			accountId: userId,
-			providerId: "credential",
-			password: passwordHash,
-		});
+		db.run(
+			`INSERT INTO "user" (id, email, email_verified, name, role, is_active) VALUES (?, ?, 1, ?, ?, 1)`,
+			[userId, opts.email, opts.name, role],
+		);
+		db.run(
+			`INSERT INTO "account" (id, user_id, account_id, provider_id, password) VALUES (?, ?, ?, 'credential', ?)`,
+			[accountId, userId, userId, passwordHash],
+		);
 
 		console.log(`Usuario creado:`);
 		console.log(`  ID:    ${userId}`);
@@ -71,13 +59,12 @@ export async function userCreate(args: string[]) {
 		console.log(`  Nombre: ${opts.name}`);
 		console.log(`  Rol:   ${role}`);
 	} catch (err) {
-		if (
-			err instanceof Error &&
-			err.message.includes("unique")
-		) {
+		if (err instanceof Error && err.message.includes("UNIQUE")) {
 			console.error(`Error: ya existe un usuario con email ${opts.email}`);
 			process.exit(1);
 		}
 		throw err;
+	} finally {
+		db.close();
 	}
 }

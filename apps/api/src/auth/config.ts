@@ -2,8 +2,6 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin as adminPlugin } from "better-auth/plugins";
 import { genericOAuth } from "better-auth/plugins";
-import { drizzle } from "drizzle-orm/bun-sql";
-import * as schema from "@procomeka/db/schema";
 import {
 	ac,
 	admin,
@@ -12,19 +10,38 @@ import {
 	reader,
 } from "./permissions.ts";
 
-const db = drizzle(process.env.DATABASE_URL ?? "postgres://localhost:5432/procomeka", { schema });
-
+const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:4321";
 const oidcEnabled = process.env.OIDC_ENABLED === "true";
 
-const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:4321";
+/**
+ * En desarrollo (sin DATABASE_URL): SQLite local vía bun:sqlite + Drizzle.
+ * En producción (con DATABASE_URL): PostgreSQL vía bun:sql + Drizzle.
+ */
+function createDatabase() {
+	if (process.env.DATABASE_URL) {
+		const { drizzle } = require("drizzle-orm/bun-sql");
+		return {
+			db: drizzle(process.env.DATABASE_URL),
+			provider: "pg" as const,
+		};
+	}
+
+	const { drizzle } = require("drizzle-orm/bun-sqlite");
+	const { Database } = require("bun:sqlite");
+	const dbPath = `${import.meta.dir}/../../../../local.db`;
+	const sqlite = new Database(dbPath, { create: true });
+	return {
+		db: drizzle(sqlite),
+		provider: "sqlite" as const,
+	};
+}
+
+const { db, provider } = createDatabase();
 
 export const auth = betterAuth({
 	baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
 	trustedOrigins: [frontendUrl],
-	database: drizzleAdapter(db, {
-		provider: "pg",
-		schema,
-	}),
+	database: drizzleAdapter(db, { provider }),
 	basePath: "/api/auth",
 	emailAndPassword: {
 		enabled: true,
