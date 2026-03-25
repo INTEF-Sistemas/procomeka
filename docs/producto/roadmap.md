@@ -1,12 +1,12 @@
 # Roadmap
 
-## Estado: Fase 0 — Fundación
+## Estado: Fase 1 — MVP de catálogo
 
 El proyecto está en fase de definición. No hay código de aplicación todavía.
 
 ---
 
-## Fase 0 — Fundación del sistema (actual)
+## Fase 0 — Fundación del sistema ✅
 
 **Objetivo**: establecer las bases técnicas, documentales y de arquitectura antes de escribir código de negocio.
 
@@ -14,12 +14,12 @@ El proyecto está en fase de definición. No hay código de aplicación todavía
 |------|--------|
 | AGENTS.md y sistema de skills definido | Completado |
 | Visión y mapa de capacidades | Completado |
-| ADR stack base (TypeScript + Bun) | Completado |
-| ADR capa API (pendiente) | Pendiente |
-| ADR capa frontend (pendiente) | Pendiente |
-| ADR base de datos (pendiente) | Pendiente |
-
-| Modelo de dominio v0 | Pendiente |
+| ADR stack base (TypeScript + Bun) | Completado — ADR-0001 |
+| ADR capa API | Completado — ADR-0003 (Hono) |
+| ADR capa frontend | Completado — ADR-0004 (Astro) |
+| ADR base de datos principal | Completado — ADR-0005 (PostgreSQL) |
+| ADR ORM y capa de acceso a datos | Completado — ADR-0006 (Drizzle ORM) |
+| Modelo de dominio v0 | Completado — borrador en `docs/producto/modelo-de-dominio.md` |
 
 ---
 
