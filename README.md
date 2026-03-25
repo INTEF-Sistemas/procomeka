@@ -183,7 +183,9 @@ Para agilizar el desarrollo, hemos implementado un \`Makefile\`. Puedes usar:
 - \`make test\`: Ejecuta todos los tests y valida el coverage general.
 - \`make test-unit\`: Ejecuta los tests unitarios.
 - \`make test-integration\`: Ejecuta los tests de integración.
-- \`make test-e2e\`: Ejecuta los tests end-to-end (e2e).
+- \`make test-e2e\`: Ejecuta los tests end-to-end (e2e) usando Chromium por defecto.
+- \`make test-e2e-firefox\`: Ejecuta los tests end-to-end usando Firefox.
+- \`make test-e2e-postgres\`: Ejecuta los tests end-to-end usando una base de datos PostgreSQL en Docker.
 - \`make check-coverage\`: Asegura que el coverage de las líneas sea mayor o igual al **90%**.
 
 ## Monorepo y Workspaces

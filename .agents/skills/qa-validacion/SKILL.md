@@ -58,3 +58,13 @@ Verificar que lo construido cumple requisitos, no rompe lo existente y mantiene 
 ## Regla
 
 Una feature no está terminada si no puede demostrarse su comportamiento esperado mediante pruebas reproducibles. "Funciona en mi máquina" no cuenta.
+
+## Ejecución de Pruebas E2E (Playwright)
+
+Los tests End-to-End se implementan utilizando Playwright y se encuentran configurados en la raíz del proyecto (`playwright.config.ts`). Disponemos de varios comandos en el `Makefile` para ejecutar la suite de pruebas bajo distintos entornos:
+
+- `make test-e2e`: Ejecuta la suite completa de pruebas utilizando el navegador **Chromium** (por defecto).
+- `make test-e2e-firefox`: Ejecuta la suite de pruebas utilizando el navegador **Firefox**.
+- `make test-e2e-postgres`: Levanta un entorno completo usando Docker Compose que incluye una base de datos **PostgreSQL**, ejecuta los tests E2E y finalmente destruye el entorno. Ideal para validaciones profundas de integración de datos.
+
+Se espera que todas las nuevas características críticas estén cubiertas por tests E2E que pasen correctamente en Chromium. Para despliegues o validaciones exhaustivas, se recomienda usar el entorno Postgres completo.

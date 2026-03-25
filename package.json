@@ -1,29 +1,31 @@
 {
-	"name": "procomeka",
-	"version": "1.0.0",
-	"module": "index.ts",
-	"type": "module",
-	"private": true,
-	"scripts": {
-		"dev": "bun run index.ts",
-		"lint": "biome lint .",
-		"format": "biome format --write .",
-		"test": "bun test --coverage",
-		"test:unit": "bun test --coverage --test-name-pattern '.*'",
-		"test:integration": "bun test --coverage --test-name-pattern '.*'",
-		"test:e2e": "bun test --coverage --test-name-pattern '.*'",
-		"check-coverage": "bun run scripts/check-coverage.ts"
-	},
-	"workspaces": [
-		"apps/*"
-	],
-	"devDependencies": {
-		"@types/bun": "latest"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
-	},
-	"dependencies": {
-		"biome": "^0.3.3"
-	}
+  "name": "procomeka",
+  "version": "1.0.0",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run index.ts",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "test": "bun test --coverage",
+    "test:unit": "bun test --coverage --test-name-pattern '.*'",
+    "test:integration": "bun test --coverage --test-name-pattern '.*'",
+    "test:e2e": "playwright test --project=chromium",
+    "check-coverage": "bun run scripts/check-coverage.ts",
+    "test:e2e:firefox": "playwright test --project=firefox"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@playwright/test": "^1.42.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "biome": "^0.3.3"
+  }
 }

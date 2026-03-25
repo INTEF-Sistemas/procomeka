@@ -1,4 +1,4 @@
-.PHONY: deps up clean format lint test test-unit test-integration test-e2e check-coverage
+.PHONY: deps up clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage
 
 # Variables
 BUN = bun
@@ -8,6 +8,7 @@ all: up
 
 deps:
 	$(BUN) install
+	$(BUN) x playwright install --with-deps
 
 up:
 	$(BUN) run dev
@@ -17,6 +18,8 @@ clean:
 	rm -rf .coverage
 	rm -rf dist
 	rm -rf build
+	rm -rf playwright-report
+	rm -rf test-results
 	find . -name "*.log" -type f -delete
 
 format:
@@ -34,7 +37,19 @@ test-integration:
 	$(BUN) test --coverage *integration.test.ts **/*integration.test.ts || true
 
 test-e2e:
-	$(BUN) test --coverage *e2e.test.ts **/*e2e.test.ts || true
+	$(BUN) run test:e2e
+
+test-e2e-firefox:
+	$(BUN) run test:e2e:firefox
+
+test-e2e-postgres:
+	@echo "Starting PostgreSQL for E2E tests..."
+	@docker compose -f e2e/docker-compose.postgres.yml up -d --wait
+	@echo "Running E2E tests with PostgreSQL..."
+	@DATABASE_URL="postgres://e2e_user:e2e_password@localhost:5432/e2e_db" $(BUN) run test:e2e; \
+	RET=$$?; \
+	docker compose -f e2e/docker-compose.postgres.yml down -v; \
+	if [ $$RET -ne 0 ]; then false; fi
 
 check-coverage:
 	$(BUN) run check-coverage
