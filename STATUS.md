@@ -85,3 +85,37 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-25 | `@.agents/skills/documentacion-y-roadmap/SKILL.md` | Roadmap y tablero global alineados con el estado real de código, ADRs y validación | Completado |
+
+## Actualización 2026-03-25 (Coordinación PM + Documentación: alineación y preparación de Épica 001)
+
+- **Fase actual corregida:** Fase 1 — MVP de catálogo (sin cambio de fase, se confirma estado real).
+- **Épica activa corregida:** `epic-001-mvp-recursos-metadatos-minimos` (nueva épica creada en `docs/epics/`).
+- **Agente en turno corregido:** `@.agents/skills/project-manager/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`.
+- **ADRs resueltas confirmadas:** ADR-0001 a ADR-0008 aceptadas; pendiente ADR de motor de búsqueda/relevancia para fases posteriores.
+
+### Desajustes detectados y alineación
+1. El estado documental indicaba avance técnico correcto, pero no existía aún una primera épica real estructurada en `docs/epics/`.
+2. `bun test` incluía accidentalmente `e2e/example.spec.ts` (Playwright), rompiendo la validación unitaria en raíz.
+3. El roadmap ya reflejaba prioridades correctas, pero faltaba trazabilidad operativa de tareas ejecutables para la primera épica.
+
+### Acciones realizadas
+- Se crea la Épica 001 con artefactos mínimos: `requirements.md`, `design.md`, `tasks.md`, `validation.md`.
+- Se corrige separación unit/e2e en testing:
+  - test E2E renombrado a `e2e/example.e2e.ts`.
+  - `playwright.config.ts` añadido para `testMatch: **/*.e2e.ts`.
+  - scripts de test en raíz acotados a `tests/` para evitar ejecución accidental de E2E en `bun test`.
+  - test automatizado agregado para verificar esta separación.
+
+### Riesgos abiertos
+- Persisten dependencias de negocio sin validar end-to-end (CRUD real aún no implementado en rutas placeholder).
+- ADR de motor de búsqueda y ADR de perfil mínimo de metadatos siguen pendientes de formalización.
+- Se necesita ampliar cobertura con tests de servicios de recursos y persistencia real.
+
+### Traspaso recomendado
+- Siguiente agente: `@.agents/skills/metadatos-y-curacion/SKILL.md` para cerrar perfil mínimo de metadatos + ADR.
+- Después: `@.agents/skills/backend-api-servicios/SKILL.md` y `@.agents/skills/data-db-architect/SKILL.md` para CRUD real y migraciones.
+- QA de cierre de tramo: `@.agents/skills/qa-validacion/SKILL.md`.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-25 | `@.agents/skills/project-manager` + `@.agents/skills/documentacion-y-roadmap` | Creación de Épica 001, alineación de trazabilidad y corrección de separación `bun test` vs Playwright E2E | Completado |

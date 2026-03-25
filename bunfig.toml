@@ -1,2 +1,2 @@
 [test]
-# We'll rely on bun's automatic discovery, but filtering in the Makefile directly
+# Tests unitarios en apps/, e2e en e2e/ (se ejecutan con playwright, no con bun test)

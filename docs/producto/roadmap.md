@@ -109,3 +109,10 @@ El proyecto ya superó la fase de mera fundación técnica. La base de plataform
 1. Cerrar la épica de modelo de metadatos mínimo.
 2. Convertir recursos y colecciones de placeholders a persistencia real con Drizzle.
 3. Separar correctamente tests unitarios y e2e para dejar `bun test` en verde.
+
+## Actualización de trazabilidad — 2026-03-25 (Épica 001 preparada)
+
+- Se formaliza la primera épica real del MVP en `docs/epics/epic-001-mvp-recursos-metadatos-minimos/`.
+- Alcance inicial: metadatos mínimos + CRUD real de recursos + validación mínima + base para búsqueda posterior.
+- Estado de la épica: **En planificación activa**, con tareas ejecutables por dominios (documentación, backend, BD, frontend, testing).
+- Dependencia explícita para próxima iteración: ADR de perfil mínimo de metadatos y ejecución del CRUD persistente.
