@@ -6,7 +6,7 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { users } from "./users.ts";
+import { user } from "./auth.ts";
 
 export const resources = pgTable("resources", {
 	id: text("id").primaryKey(),
@@ -34,7 +34,7 @@ export const resources = pgTable("resources", {
 	editorialStatus: varchar("editorial_status", { length: 50 })
 		.notNull()
 		.default("borrador"),
-	assignedCuratorId: text("assigned_curator_id").references(() => users.id),
+	assignedCuratorId: text("assigned_curator_id").references(() => user.id),
 	curatedAt: timestamp("curated_at"),
 	featuredAt: timestamp("featured_at"),
 
@@ -77,9 +77,9 @@ export const resourceLevels = pgTable("resource_levels", {
 
 // Relaciones
 export const resourcesRelations = relations(resources, ({ one, many }) => ({
-	curator: one(users, {
+	curator: one(user, {
 		fields: [resources.assignedCuratorId],
-		references: [users.id],
+		references: [user.id],
 	}),
 	mediaItems: many(mediaItems),
 	subjects: many(resourceSubjects),

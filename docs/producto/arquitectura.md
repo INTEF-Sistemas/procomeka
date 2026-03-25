@@ -46,6 +46,8 @@ El sistema se organiza en capas desacopladas con contratos explícitos entre ell
 │                 API Layer                    │
 │     REST público + Admin API                 │
 │     Hono + Bun  (ADR-0003)                   │
+│     Auth: Better Auth (ADR-0007)             │
+│     RBAC: admin/curator/author/reader (0008) │
 │     apps/api/                                │
 └────────┬────────────────────────────────────┘
          │
@@ -79,7 +81,8 @@ El sistema se organiza en capas desacopladas con contratos explícitos entre ell
 ```
 procomeka/
 ├── apps/
-│   ├── api/          # Servidor API — Hono + Bun
+│   ├── api/          # Servidor API — Hono + Better Auth
+│   ├── cli/          # CLI de gestión (usuarios, migraciones)
 │   └── frontend/     # Frontend público — Astro
 ├── packages/
 │   └── db/           # Esquema, migraciones, acceso a datos — Drizzle ORM
@@ -92,10 +95,16 @@ procomeka/
 
 ### API Layer — `apps/api/`
 - Framework: **Hono** (ADR-0003)
-- Expone endpoints REST para clientes externos y frontend
+- Autenticación: **Better Auth** (ADR-0007) — password + OpenID Connect configurable
+- Autorización: **RBAC** (ADR-0008) — roles admin/curator/author/reader
+- Rutas separadas: `/api/v1/*` (pública), `/api/admin/*` (auth+RBAC), `/api/auth/*` (Better Auth)
 - Valida entrada, aplica autenticación y autorización
-- Orquesta tareas programadas o asíncronas sencillas que pueden lanzarse vía API o CLI
 - No contiene lógica de negocio; delega en servicios
+
+### CLI — `apps/cli/`
+- Herramienta de gestión desde terminal
+- Comandos: `user:create`, `user:list`
+- Usa Drizzle directamente contra PostgreSQL
 
 ### Frontend público — `apps/frontend/`
 - Framework: **Astro** (ADR-0004)
@@ -136,3 +145,5 @@ procomeka/
 - [ADR-0004](../negocio/decisiones/0004-framework-frontend.md): Framework frontend — Astro
 - [ADR-0005](../negocio/decisiones/0005-base-de-datos-principal.md): Base de datos principal — PostgreSQL
 - [ADR-0006](../negocio/decisiones/0006-orm-y-capa-acceso-datos.md): ORM y capa de acceso a datos — Drizzle
+- [ADR-0007](../negocio/decisiones/0007-autenticacion-y-sesiones.md): Autenticación y sesiones — Better Auth
+- [ADR-0008](../negocio/decisiones/0008-modelo-de-autorizacion.md): Modelo de autorización — RBAC

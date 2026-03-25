@@ -1,4 +1,4 @@
-.PHONY: deps up clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage
+.PHONY: deps up clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage cli
 
 # Variables
 BUN = bun
@@ -59,3 +59,6 @@ test-e2e-postgres:
 
 check-coverage:
 	$(BUN) run check-coverage
+
+cli:
+	$(BUN) run --filter '@procomeka/cli' cli -- $(ARGS)

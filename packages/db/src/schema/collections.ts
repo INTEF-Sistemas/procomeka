@@ -7,7 +7,7 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { resources } from "./resources.ts";
-import { users } from "./users.ts";
+import { user } from "./auth.ts";
 
 export const collections = pgTable("collections", {
 	id: text("id").primaryKey(),
@@ -21,7 +21,7 @@ export const collections = pgTable("collections", {
 		.default("borrador"),
 	curatorId: text("curator_id")
 		.notNull()
-		.references(() => users.id),
+		.references(() => user.id),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -38,9 +38,9 @@ export const collectionResources = pgTable("collection_resources", {
 
 // Relaciones
 export const collectionsRelations = relations(collections, ({ one, many }) => ({
-	curator: one(users, {
+	curator: one(user, {
 		fields: [collections.curatorId],
-		references: [users.id],
+		references: [user.id],
 	}),
 	resources: many(collectionResources),
 }));
