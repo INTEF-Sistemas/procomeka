@@ -1,4 +1,4 @@
-.PHONY: deps up clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage cli seed
+.PHONY: deps up down clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage cli seed
 
 # Variables
 BUN = bun
@@ -12,6 +12,11 @@ deps:
 
 up: deps seed
 	$(BUN) run dev
+
+down:
+	-@lsof -ti:3000 | xargs kill 2>/dev/null
+	-@lsof -ti:4321 | xargs kill 2>/dev/null
+	@echo "Servicios detenidos"
 
 up-api:
 	$(BUN) run dev:api
