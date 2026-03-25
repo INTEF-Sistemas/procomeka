@@ -44,11 +44,52 @@ describe("Rutas admin — con sesión de admin", () => {
 			body: JSON.stringify({ title: "Solo título" }),
 		});
 		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body.details).toBeDefined();
+		expect(Array.isArray(body.details)).toBe(true);
+		expect(body.details.length).toBeGreaterThan(0);
+		expect(body.details[0].field).toBeDefined();
+		expect(body.details[0].message).toBeDefined();
 	});
 
-	test("PUT /api/admin/resources/:id → 200", async () => {
-		const res = await app.request("/api/admin/resources/res-1", {
-			method: "PUT",
+	test("GET /api/admin/resources → 200 con lista", async () => {
+		const res = await app.request("/api/admin/resources");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(Array.isArray(body.data)).toBe(true);
+		expect(typeof body.total).toBe("number");
+	});
+
+	test("GET /api/admin/resources/:id → 200 con recurso existente", async () => {
+		const createRes = await app.request("/api/admin/resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validResource),
+		});
+		const created = await createRes.json();
+
+		const res = await app.request(`/api/admin/resources/${created.id}`);
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.id).toBe(created.id);
+		expect(body.title).toBe(validResource.title);
+	});
+
+	test("GET /api/admin/resources/:id → 404 para id inexistente", async () => {
+		const res = await app.request("/api/admin/resources/no-existe-xyz");
+		expect(res.status).toBe(404);
+	});
+
+	test("PATCH /api/admin/resources/:id → 200", async () => {
+		const createRes = await app.request("/api/admin/resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validResource),
+		});
+		const created = await createRes.json();
+
+		const res = await app.request(`/api/admin/resources/${created.id}`, {
+			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ title: "Título actualizado" }),
 		});
@@ -57,8 +98,32 @@ describe("Rutas admin — con sesión de admin", () => {
 		expect(body.updated).toBe(true);
 	});
 
-	test("DELETE /api/admin/resources/:id → 200", async () => {
-		// Crear uno para borrar
+	test("PATCH /api/admin/resources/:id → 404 para id inexistente", async () => {
+		const res = await app.request("/api/admin/resources/no-existe", {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ title: "Nuevo" }),
+		});
+		expect(res.status).toBe(404);
+	});
+
+	test("PATCH /api/admin/resources/:id → 400 sin campos", async () => {
+		const createRes = await app.request("/api/admin/resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validResource),
+		});
+		const created = await createRes.json();
+
+		const res = await app.request(`/api/admin/resources/${created.id}`, {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({}),
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("DELETE /api/admin/resources/:id → 200 soft delete", async () => {
 		const createRes = await app.request("/api/admin/resources", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -70,17 +135,28 @@ describe("Rutas admin — con sesión de admin", () => {
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.deleted).toBe(true);
+
+		// Recurso ya no aparece por GET
+		const getRes = await app.request(`/api/admin/resources/${created.id}`);
+		expect(getRes.status).toBe(404);
 	});
 
-	test("PATCH /api/admin/resources/:id/status → 200", async () => {
-		const res = await app.request("/api/admin/resources/res-2/status", {
+	test("PATCH /api/admin/resources/:id/status → 200 con status válido", async () => {
+		const createRes = await app.request("/api/admin/resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validResource),
+		});
+		const created = await createRes.json();
+
+		const res = await app.request(`/api/admin/resources/${created.id}/status`, {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ status: "validado" }),
+			body: JSON.stringify({ status: "published" }),
 		});
 		expect(res.status).toBe(200);
 		const body = await res.json();
-		expect(body.status).toBe("validado");
+		expect(body.status).toBe("published");
 	});
 
 	test("PATCH /api/admin/resources/:id/status → 400 sin status", async () => {
@@ -90,6 +166,17 @@ describe("Rutas admin — con sesión de admin", () => {
 			body: JSON.stringify({}),
 		});
 		expect(res.status).toBe(400);
+	});
+
+	test("PATCH /api/admin/resources/:id/status → 400 con status inválido", async () => {
+		const res = await app.request("/api/admin/resources/res-2/status", {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ status: "borrador" }),
+		});
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body.details).toBeDefined();
 	});
 
 	test("GET /api/admin/users → 200", async () => {
@@ -127,10 +214,17 @@ describe("Rutas admin — RBAC por rol", () => {
 
 	test("curator puede cambiar estado editorial", async () => {
 		const app = createAdminApp({ id: "1", role: "curator" });
-		const res = await app.request("/api/admin/resources/res-3/status", {
+		const createRes = await app.request("/api/admin/resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validResource),
+		});
+		const created = await createRes.json();
+
+		const res = await app.request(`/api/admin/resources/${created.id}/status`, {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ status: "destacado" }),
+			body: JSON.stringify({ status: "published" }),
 		});
 		expect(res.status).toBe(200);
 	});
@@ -140,7 +234,7 @@ describe("Rutas admin — RBAC por rol", () => {
 		const res = await app.request("/api/admin/resources/res-3/status", {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ status: "validado" }),
+			body: JSON.stringify({ status: "published" }),
 		});
 		expect(res.status).toBe(403);
 	});

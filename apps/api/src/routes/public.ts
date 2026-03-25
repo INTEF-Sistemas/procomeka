@@ -8,14 +8,14 @@ publicRoutes.get("/resources", async (c) => {
 	const offset = Number(c.req.query("offset") ?? "0");
 	const search = c.req.query("q") ?? undefined;
 
-	const result = await listResources({ limit, offset, search });
+	const result = await listResources({ limit, offset, search, status: "published" });
 	return c.json(result);
 });
 
 publicRoutes.get("/resources/:slug", async (c) => {
 	const { slug } = c.req.param();
 	const resource = await getResourceBySlug(slug);
-	if (!resource) {
+	if (!resource || resource.editorialStatus !== "published") {
 		return c.json({ error: "Recurso no encontrado" }, 404);
 	}
 	return c.json(resource);

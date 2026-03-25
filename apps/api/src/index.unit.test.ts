@@ -1,5 +1,30 @@
-import { expect, test, describe } from "bun:test";
+import { expect, test, describe, beforeAll } from "bun:test";
 import { app } from "./index.ts";
+import { createResource, updateEditorialStatus } from "./resources/repository.ts";
+
+let publishedSlug: string;
+let draftSlug: string;
+
+beforeAll(async () => {
+	const draft = await createResource({
+		title: "Recurso borrador test",
+		description: "Este recurso está en borrador",
+		language: "es",
+		license: "cc-by",
+		resourceType: "documento",
+	});
+	draftSlug = draft.slug;
+
+	const pub = await createResource({
+		title: "Recurso publicado test",
+		description: "Este recurso está publicado",
+		language: "es",
+		license: "cc-by",
+		resourceType: "documento",
+	});
+	publishedSlug = pub.slug;
+	await updateEditorialStatus(pub.id, "published", "system");
+});
 
 describe("Endpoints básicos", () => {
 	test("GET /health devuelve status ok", async () => {
@@ -36,28 +61,35 @@ describe("Rutas públicas /api/v1", () => {
 		expect(typeof body.total).toBe("number");
 	});
 
+	test("GET /api/v1/resources solo devuelve recursos publicados", async () => {
+		const res = await app.request("/api/v1/resources");
+		const body = await res.json();
+		const slugs = body.data.map((r: { slug: string }) => r.slug);
+		expect(slugs).toContain(publishedSlug);
+		expect(slugs).not.toContain(draftSlug);
+	});
+
 	test("GET /api/v1/resources/:slug devuelve 404 para slug inexistente", async () => {
 		const res = await app.request("/api/v1/resources/no-existe-xyz");
 		expect(res.status).toBe(404);
 	});
 
-	test("GET /api/v1/resources/:slug devuelve recurso si existe", async () => {
-		// Primero obtenemos un slug real del listado
-		const listRes = await app.request("/api/v1/resources?limit=1");
-		const list = await listRes.json();
-		if (list.data.length > 0) {
-			const slug = list.data[0].slug;
-			const res = await app.request(`/api/v1/resources/${slug}`);
-			expect(res.status).toBe(200);
-			const body = await res.json();
-			expect(body.slug).toBe(slug);
-			expect(body.subjects).toBeDefined();
-			expect(body.levels).toBeDefined();
-		}
+	test("GET /api/v1/resources/:slug devuelve 404 para recurso no publicado", async () => {
+		const res = await app.request(`/api/v1/resources/${draftSlug}`);
+		expect(res.status).toBe(404);
+	});
+
+	test("GET /api/v1/resources/:slug devuelve recurso publicado", async () => {
+		const res = await app.request(`/api/v1/resources/${publishedSlug}`);
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.slug).toBe(publishedSlug);
+		expect(body.subjects).toBeDefined();
+		expect(body.levels).toBeDefined();
 	});
 
 	test("GET /api/v1/resources?q= filtra por búsqueda", async () => {
-		const res = await app.request("/api/v1/resources?q=scratch");
+		const res = await app.request("/api/v1/resources?q=publicado");
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(Array.isArray(body.data)).toBe(true);

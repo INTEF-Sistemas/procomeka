@@ -34,9 +34,10 @@ function createSqliteTables(sqlite: { run: (sql: string) => void }) {
 		license TEXT NOT NULL, resource_type TEXT NOT NULL, keywords TEXT,
 		author TEXT, publisher TEXT, duration INTEGER,
 		accessibility_features TEXT, accessibility_hazards TEXT, access_mode TEXT,
-		editorial_status TEXT NOT NULL DEFAULT 'borrador',
+		editorial_status TEXT NOT NULL DEFAULT 'draft',
 		assigned_curator_id TEXT REFERENCES "user"(id),
 		curated_at INTEGER, featured_at INTEGER, imported_at INTEGER, import_source TEXT,
+		deleted_at INTEGER,
 		created_at INTEGER, updated_at INTEGER
 	)`);
 	sqlite.run(`CREATE TABLE IF NOT EXISTS "media_items" (
@@ -50,6 +51,9 @@ function createSqliteTables(sqlite: { run: (sql: string) => void }) {
 	sqlite.run(`CREATE TABLE IF NOT EXISTS "resource_levels" (
 		resource_id TEXT NOT NULL REFERENCES "resources"(id) ON DELETE CASCADE, level TEXT NOT NULL
 	)`);
+	sqlite.run(`CREATE INDEX IF NOT EXISTS idx_resources_slug ON resources(slug)`);
+	sqlite.run(`CREATE INDEX IF NOT EXISTS idx_resources_status ON resources(editorial_status)`);
+	sqlite.run(`CREATE INDEX IF NOT EXISTS idx_resources_type ON resources(resource_type)`);
 }
 
 function createDb() {

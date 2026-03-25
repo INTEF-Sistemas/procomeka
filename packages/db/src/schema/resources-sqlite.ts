@@ -22,13 +22,15 @@ export const resources = sqliteTable("resources", {
 	accessibilityHazards: text("accessibility_hazards"),
 	accessMode: text("access_mode"),
 
-	editorialStatus: text("editorial_status").notNull().default("borrador"),
+	editorialStatus: text("editorial_status").notNull().default("draft"),
 	assignedCuratorId: text("assigned_curator_id").references(() => user.id),
 	curatedAt: integer("curated_at", { mode: "timestamp" }),
 	featuredAt: integer("featured_at", { mode: "timestamp" }),
 
 	importedAt: integer("imported_at", { mode: "timestamp" }),
 	importSource: text("import_source"),
+
+	deletedAt: integer("deleted_at", { mode: "timestamp" }),
 
 	createdAt: integer("created_at", { mode: "timestamp" }),
 	updatedAt: integer("updated_at", { mode: "timestamp" }),

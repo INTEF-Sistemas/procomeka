@@ -9,6 +9,13 @@ import Base from "../layouts/Base.astro";
 </Base>
 
 <script>
+	const STATUS_LABELS: Record<string, string> = {
+		draft: "Borrador",
+		review: "En revisión",
+		published: "Publicado",
+		archived: "Archivado",
+	};
+
 	const container = document.getElementById("resource-detail") as HTMLDivElement;
 	const params = new URLSearchParams(window.location.search);
 	const slug = params.get("slug");
@@ -27,12 +34,14 @@ import Base from "../layouts/Base.astro";
 			}
 
 			const r = await res.json();
+			const status = r.editorial_status ?? r.editorialStatus ?? "draft";
+			const statusLabel = STATUS_LABELS[status] ?? status;
 			container.innerHTML = `
 				<nav class="breadcrumb"><a href="/">Recursos</a> / ${r.title}</nav>
 				<h1>${r.title}</h1>
 				<div class="meta">
 					<span class="badge">${r.resource_type ?? r.resourceType}</span>
-					<span class="badge badge-${r.editorial_status ?? r.editorialStatus}">${r.editorial_status ?? r.editorialStatus}</span>
+					<span class="badge badge-${status}">${statusLabel}</span>
 					<span>${r.language}</span>
 					<span>${r.license}</span>
 				</div>
@@ -57,9 +66,10 @@ import Base from "../layouts/Base.astro";
 	h1 { margin-bottom: 0.75rem; }
 	.meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; color: #6b7280; font-size: 0.85rem; }
 	.badge { padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; background: #e5e7eb; color: #374151; }
-	.badge-validado { background: #d1fae5; color: #065f46; }
-	.badge-destacado { background: #dbeafe; color: #1e40af; }
-	.badge-borrador { background: #fef3c7; color: #92400e; }
+	.badge-draft { background: #fef3c7; color: #92400e; }
+	.badge-review { background: #e0e7ff; color: #3730a3; }
+	.badge-published { background: #d1fae5; color: #065f46; }
+	.badge-archived { background: #e5e7eb; color: #374151; }
 	.description { font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; }
 	.field { margin: 0.25rem 0; font-size: 0.9rem; }
 	.loading { color: #9ca3af; }

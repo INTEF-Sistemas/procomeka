@@ -30,7 +30,10 @@ import Base from "../layouts/Base.astro";
 
 			<div id="author-section" class="section" style="display:none;">
 				<h2>Mis recursos</h2>
-				<p>Puedes crear y editar tus propios recursos educativos.</p>
+				<a href="/admin/recursos/nuevo" class="btn-create">Crear recurso</a>
+				<div id="resources-list">
+					<p class="loading-text">Cargando recursos...</p>
+				</div>
 			</div>
 
 			<button id="logout-btn">Cerrar sesión</button>
@@ -39,6 +42,64 @@ import Base from "../layouts/Base.astro";
 </Base>
 
 <script>
+	const STATUS_LABELS: Record<string, string> = {
+		draft: "Borrador",
+		review: "En revisión",
+		published: "Publicado",
+		archived: "Archivado",
+	};
+
+	async function loadResources() {
+		const container = document.getElementById("resources-list") as HTMLDivElement;
+		try {
+			const res = await fetch("/api/admin/resources", { credentials: "include" });
+			if (!res.ok) {
+				container.innerHTML = "<p>Error al cargar recursos.</p>";
+				return;
+			}
+			const { data } = await res.json();
+			if (!data || data.length === 0) {
+				container.innerHTML = "<p>No hay recursos todavía.</p>";
+				return;
+			}
+
+			const rows = data.map((r: Record<string, string>) => {
+				const status = r.editorial_status ?? r.editorialStatus ?? "draft";
+				const label = STATUS_LABELS[status] ?? status;
+				const date = r.created_at ?? r.createdAt ?? "";
+				const dateStr = date ? new Date(typeof date === "number" ? date * 1000 : date).toLocaleDateString("es-ES") : "";
+				return `<tr>
+					<td>${r.title}</td>
+					<td><span class="badge badge-${status}">${label}</span></td>
+					<td>${dateStr}</td>
+					<td class="actions">
+						<a href="/admin/recursos/editar?id=${r.id}" class="action-link">Editar</a>
+						<button class="action-delete" data-id="${r.id}">Eliminar</button>
+					</td>
+				</tr>`;
+			}).join("");
+
+			container.innerHTML = `<table>
+				<thead><tr><th>Título</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+				<tbody>${rows}</tbody>
+			</table>`;
+
+			container.querySelectorAll(".action-delete").forEach((btn) => {
+				btn.addEventListener("click", async () => {
+					const id = (btn as HTMLButtonElement).dataset.id;
+					if (!confirm("¿Eliminar este recurso?")) return;
+					const delRes = await fetch(`/api/admin/resources/${id}`, {
+						method: "DELETE",
+						credentials: "include",
+					});
+					if (delRes.ok) loadResources();
+				});
+			});
+		} catch {
+			container.innerHTML = "<p>Error de conexión.</p>";
+		}
+	}
+
 	async function loadSession() {
 		const loading = document.getElementById("loading") as HTMLDivElement;
 		const notAuth = document.getElementById("not-authenticated") as HTMLDivElement;
@@ -76,6 +137,7 @@ import Base from "../layouts/Base.astro";
 
 			if (level >= 1) {
 				(document.getElementById("author-section") as HTMLDivElement).style.display = "block";
+				loadResources();
 			}
 			if (level >= 2) {
 				(document.getElementById("curator-section") as HTMLDivElement).style.display = "block";
@@ -98,7 +160,6 @@ import Base from "../layouts/Base.astro";
 			credentials: "include",
 		});
 
-		// Redirigir al end_session del proveedor OIDC si el usuario entró por SSO
 		try {
 			const configRes = await fetch("/api/v1/config");
 			const config = await configRes.json();
@@ -117,7 +178,7 @@ import Base from "../layouts/Base.astro";
 
 <style>
 	.dashboard-container {
-		max-width: 600px;
+		max-width: 700px;
 		margin: 2rem auto;
 		padding: 2rem;
 	}
@@ -145,11 +206,52 @@ import Base from "../layouts/Base.astro";
 		font-size: 1.1rem;
 	}
 
+	.btn-create {
+		display: inline-block;
+		padding: 0.4rem 0.8rem;
+		background: #1a56db;
+		color: white;
+		text-decoration: none;
+		border-radius: 4px;
+		font-size: 0.85rem;
+		margin-bottom: 0.75rem;
+	}
+	.btn-create:hover { background: #1e40af; }
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.85rem;
+	}
+	th, td {
+		text-align: left;
+		padding: 0.4rem 0.5rem;
+		border-bottom: 1px solid #e5e7eb;
+	}
+	th { font-weight: 600; color: #6b7280; font-size: 0.8rem; text-transform: uppercase; }
+
+	.actions { white-space: nowrap; }
+	.action-link {
+		color: #1a56db;
+		text-decoration: none;
+		margin-right: 0.5rem;
+	}
+	.action-link:hover { text-decoration: underline; }
+	.action-delete {
+		background: none;
+		border: none;
+		color: #dc2626;
+		cursor: pointer;
+		font-size: 0.85rem;
+		padding: 0;
+	}
+	.action-delete:hover { text-decoration: underline; }
+
 	.badge {
 		display: inline-block;
 		padding: 0.15rem 0.5rem;
 		border-radius: 4px;
-		font-size: 0.8rem;
+		font-size: 0.75rem;
 		font-weight: 600;
 		text-transform: uppercase;
 	}
@@ -158,6 +260,12 @@ import Base from "../layouts/Base.astro";
 	.badge-curator { background: #dbeafe; color: #1e40af; }
 	.badge-author { background: #d1fae5; color: #065f46; }
 	.badge-reader { background: #e5e7eb; color: #374151; }
+	.badge-draft { background: #fef3c7; color: #92400e; }
+	.badge-review { background: #e0e7ff; color: #3730a3; }
+	.badge-published { background: #d1fae5; color: #065f46; }
+	.badge-archived { background: #e5e7eb; color: #374151; }
+
+	.loading-text { color: #9ca3af; }
 
 	button {
 		padding: 0.5rem 1rem;

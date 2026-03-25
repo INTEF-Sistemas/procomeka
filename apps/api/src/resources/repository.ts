@@ -1,4 +1,4 @@
-import { eq, like, sql, desc } from "drizzle-orm";
+import { eq, like, sql, desc, isNull, and } from "drizzle-orm";
 import { getDb } from "../db.ts";
 
 // Importaciones dinámicas según el provider
@@ -22,6 +22,7 @@ type ResourceRow = {
 	author: string | null;
 	publisher: string | null;
 	editorialStatus: string;
+	deletedAt: unknown;
 	createdAt: unknown;
 	updatedAt: unknown;
 };
@@ -38,7 +39,7 @@ export async function listResources(opts: {
 	const limit = Math.min(opts.limit ?? 20, 100);
 	const offset = opts.offset ?? 0;
 
-	const conditions = [];
+	const conditions = [isNull(resources.deletedAt)];
 	if (opts.search) {
 		conditions.push(like(resources.title, `%${opts.search}%`));
 	}
@@ -46,9 +47,7 @@ export async function listResources(opts: {
 		conditions.push(eq(resources.editorialStatus, opts.status));
 	}
 
-	const where = conditions.length > 0
-		? conditions.reduce((a, b) => sql`${a} AND ${b}`)
-		: undefined;
+	const where = conditions.reduce((a, b) => sql`${a} AND ${b}`);
 
 	const rows = await db
 		.select()
@@ -68,6 +67,37 @@ export async function listResources(opts: {
 	return { data: rows, total, limit, offset };
 }
 
+export async function getResourceById(id: string) {
+	const { db } = getDb();
+	const schema = getSchema();
+	const { resources, resourceSubjects, resourceLevels } = schema;
+
+	const rows = await db
+		.select()
+		.from(resources)
+		.where(and(eq(resources.id, id), isNull(resources.deletedAt)))
+		.limit(1);
+
+	const resource = rows[0] as ResourceRow | undefined;
+	if (!resource) return null;
+
+	const subjects = await db
+		.select({ subject: resourceSubjects.subject })
+		.from(resourceSubjects)
+		.where(eq(resourceSubjects.resourceId, resource.id));
+
+	const levels = await db
+		.select({ level: resourceLevels.level })
+		.from(resourceLevels)
+		.where(eq(resourceLevels.resourceId, resource.id));
+
+	return {
+		...resource,
+		subjects: subjects.map((s: { subject: string }) => s.subject),
+		levels: levels.map((l: { level: string }) => l.level),
+	};
+}
+
 export async function getResourceBySlug(slug: string) {
 	const { db } = getDb();
 	const schema = getSchema();
@@ -76,7 +106,7 @@ export async function getResourceBySlug(slug: string) {
 	const rows = await db
 		.select()
 		.from(resources)
-		.where(eq(resources.slug, slug))
+		.where(and(eq(resources.slug, slug), isNull(resources.deletedAt)))
 		.limit(1);
 
 	const resource = rows[0] as ResourceRow | undefined;
@@ -136,7 +166,7 @@ export async function createResource(data: {
 		keywords: data.keywords ?? null,
 		author: data.author ?? null,
 		publisher: data.publisher ?? null,
-		editorialStatus: "borrador",
+		editorialStatus: "draft",
 		createdAt: now,
 		updatedAt: now,
 	});
@@ -176,7 +206,7 @@ export async function updateResource(
 	await db
 		.update(resources)
 		.set({ ...data, updatedAt: new Date() })
-		.where(eq(resources.id, id));
+		.where(and(eq(resources.id, id), isNull(resources.deletedAt)));
 }
 
 export async function deleteResource(id: string) {
@@ -184,7 +214,10 @@ export async function deleteResource(id: string) {
 	const schema = getSchema();
 	const { resources } = schema;
 
-	await db.delete(resources).where(eq(resources.id, id));
+	await db
+		.update(resources)
+		.set({ deletedAt: new Date(), updatedAt: new Date() })
+		.where(and(eq(resources.id, id), isNull(resources.deletedAt)));
 }
 
 export async function updateEditorialStatus(
@@ -201,12 +234,12 @@ export async function updateEditorialStatus(
 		assignedCuratorId: curatorId,
 		updatedAt: new Date(),
 	};
-	if (status === "validado" || status === "destacado") {
+	if (status === "published" || status === "archived") {
 		updates.curatedAt = new Date();
 	}
-	if (status === "destacado") {
-		updates.featuredAt = new Date();
-	}
 
-	await db.update(resources).set(updates).where(eq(resources.id, id));
+	await db
+		.update(resources)
+		.set(updates)
+		.where(and(eq(resources.id, id), isNull(resources.deletedAt)));
 }

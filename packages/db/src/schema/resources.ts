@@ -33,7 +33,7 @@ export const resources = pgTable("resources", {
 	// Estado editorial
 	editorialStatus: varchar("editorial_status", { length: 50 })
 		.notNull()
-		.default("borrador"),
+		.default("draft"),
 	assignedCuratorId: text("assigned_curator_id").references(() => user.id),
 	curatedAt: timestamp("curated_at"),
 	featuredAt: timestamp("featured_at"),
@@ -43,6 +43,8 @@ export const resources = pgTable("resources", {
 	importSource: text("import_source"),
 
 	// Sistema
+	deletedAt: timestamp("deleted_at"),
+
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
