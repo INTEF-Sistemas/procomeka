@@ -2,7 +2,7 @@
 
 ## Estado: Fase 1 — MVP de catálogo
 
-Estructura base del monorepo implementada. Primera iteración de código en marcha.
+Base técnica y documental completada. API, auth y frontend editorial mínimo ya tienen primera implementación; el catálogo funcional todavía no.
 
 ---
 
@@ -34,9 +34,9 @@ Estructura base del monorepo implementada. Primera iteración de código en marc
 | Autenticación y autorización | Completado — Better Auth (password + OIDC), RBAC, CLI usuarios, login/dashboard |
 | Flujo editorial de recursos | No iniciada |
 | Búsqueda y facetas iniciales | No iniciada |
-| API REST pública v1 | No iniciada |
+| API REST pública v1 | En desarrollo — rutas base `/api/v1`, `health`, `config` y placeholders de recursos/colecciones |
 | Importación piloto desde CSV | No iniciada |
-| Frontend público mínimo | No iniciada |
+| Frontend público mínimo | En desarrollo — landing, login y dashboard; catálogo público aún pendiente |
 
 ---
 
@@ -78,3 +78,34 @@ Estructura base del monorepo implementada. Primera iteración de código en marc
 | SSO educativo | No iniciada |
 | Observabilidad y alertas | No iniciada |
 | Documentación para operadores | No iniciada |
+
+---
+
+## Actualización de estado — 2026-03-25
+
+### Confirmado en repositorio
+
+- ADR-0001 a ADR-0008 presentes y aceptadas, incluyendo auth y autorización.
+- Monorepo operativo con `apps/api`, `apps/frontend`, `apps/cli` y `packages/db`.
+- API Hono con separación de rutas públicas (`/api/v1`) y admin (`/api/admin`).
+- Better Auth integrado con login por email/password, soporte OIDC configurable y sesiones por cookie.
+- RBAC implementado con roles `reader`, `author`, `curator`, `admin`.
+- Frontend Astro con páginas `index`, `login` y `dashboard`.
+- CLI para seed y gestión básica de usuarios.
+- Cobertura unitaria existente en API/auth/rutas admin.
+
+### Lectura ejecutiva
+
+El proyecto ya superó la fase de mera fundación técnica. La base de plataforma está razonablemente asentada y la primera capacidad transversal relevante completada es autenticación/autorización. Lo que aún no existe es el núcleo del producto: modelo de metadatos mínimo cerrado, recursos persistidos de extremo a extremo, búsqueda/facetas, flujo editorial real e importación.
+
+### Riesgos y ajustes inmediatos
+
+- La regla de validación estricta todavía no se cumple a nivel raíz: `bun test` falla porque Bun intenta ejecutar `e2e/example.spec.ts` como si fuera un test unitario de Playwright.
+- La API pública y admin siguen devolviendo respuestas placeholder; hay contratos iniciales pero no lógica de negocio de catálogo.
+- `STATUS.md` estaba desalineado respecto al roadmap y a las ADRs; se corrige en paralelo para evitar decisiones sobre un estado obsoleto.
+
+### Siguiente tramo recomendado
+
+1. Cerrar la épica de modelo de metadatos mínimo.
+2. Convertir recursos y colecciones de placeholders a persistencia real con Drizzle.
+3. Separar correctamente tests unitarios y e2e para dejar `bun test` en verde.

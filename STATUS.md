@@ -3,19 +3,22 @@
 **⚠️ IMPORTANTE PARA TODOS LOS AGENTES:**
 Debéis leer este archivo antes de comenzar cualquier tarea para entender el contexto global y el progreso del proyecto. Al finalizar una tarea, debéis actualizar vuestro progreso aquí.
 
-## Fase Actual: Definición Inicial y Skills
+## Fase Actual: Fase 1 — MVP de catálogo
 
-- **Épica activa:** Ninguna (Fase de inicialización)
-- **Agente en turno:** @.agents/skills/project-manager/SKILL.md (Orquestador pendiente de definir primera épica)
+- **Épica activa:** Transversal de plataforma base completada; siguiente foco recomendado: modelo de metadatos mínimo + recursos persistidos
+- **Agente en turno:** @.agents/skills/documentacion-y-roadmap/SKILL.md
 
 ## ADRs Bloqueantes (Prioridad Alta)
 
 Antes de escribir código de negocio, se deben resolver las siguientes decisiones arquitectónicas:
 
-- [ ] **ADR-0002**: Framework HTTP para API (Pendiente de `@.agents/skills/evaluacion-tecnologica/SKILL.md`)
-- [ ] **ADR-0003**: Framework Frontend (Pendiente de `@.agents/skills/evaluacion-tecnologica/SKILL.md`)
-- [ ] **ADR-0004**: Base de datos principal (Pendiente de `@.agents/skills/evaluacion-tecnologica/SKILL.md`)
-- [ ] **ADR-0005**: Motor de búsqueda (Pendiente de `@.agents/skills/evaluacion-tecnologica/SKILL.md`)
+- [x] **ADR-0003**: Framework HTTP para API (`docs/negocio/decisiones/0003-framework-http-api.md`)
+- [x] **ADR-0004**: Framework Frontend (`docs/negocio/decisiones/0004-framework-frontend.md`)
+- [x] **ADR-0005**: Base de datos principal (`docs/negocio/decisiones/0005-base-de-datos-principal.md`)
+- [x] **ADR-0006**: ORM y capa de acceso a datos (`docs/negocio/decisiones/0006-orm-y-capa-acceso-datos.md`)
+- [x] **ADR-0007**: Autenticación y gestión de sesiones (`docs/negocio/decisiones/0007-autenticacion-y-sesiones.md`)
+- [x] **ADR-0008**: Modelo de autorización (`docs/negocio/decisiones/0008-modelo-de-autorizacion.md`)
+- [ ] **ADR pendiente**: Motor de búsqueda para catálogo y relevancia (todavía no documentada)
 
 ## Registro de Tareas Recientes
 
@@ -59,3 +62,26 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-25 | `@.agents/skills/evaluacion-tecnologica/SKILL.md` | ADR-0003 framework HTTP API (`docs/negocio/decisiones/0003-framework-http-api.md`) | Propuesto |
+
+## Actualización 2026-03-25 (Alineación documental de estado)
+
+- **Resumen ejecutivo:**
+  - El repositorio ya no está en fase de inicialización.
+  - Están presentes y aceptadas las ADR-0001 a ADR-0008.
+  - La base técnica existe en código: `apps/api`, `apps/frontend`, `apps/cli` y `packages/db`.
+  - La autenticación y autorización tienen implementación inicial con tests unitarios pasando.
+  - El núcleo funcional del catálogo sigue pendiente: metadatos mínimos, persistencia real de recursos, búsqueda y flujo editorial.
+- **Validación actual:**
+  - `bun test` en raíz no está verde todavía.
+  - Resultado observado el 2026-03-25: tests unitarios de API/auth/RBAC pasan, pero la ejecución global falla al intentar cargar `e2e/example.spec.ts` desde Bun en vez de Playwright.
+- **Bloqueos reales actuales:**
+  - Ya no bloquean ADRs de framework HTTP, frontend ni base de datos.
+  - El bloqueo práctico es de implementación funcional y de disciplina de testing.
+- **Traspaso sugerido:**
+  - `@.agents/skills/metadatos-y-curacion/SKILL.md` para cerrar modelo mínimo de metadatos.
+  - `@.agents/skills/backend-api-servicios/SKILL.md` para reemplazar placeholders por persistencia real.
+  - `@.agents/skills/qa-validacion/SKILL.md` para dejar separación limpia entre unit/e2e.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-25 | `@.agents/skills/documentacion-y-roadmap/SKILL.md` | Roadmap y tablero global alineados con el estado real de código, ADRs y validación | Completado |
