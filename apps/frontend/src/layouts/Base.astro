@@ -1,9 +1,13 @@
 ---
+import PreviewBanner from "../components/PreviewBanner.astro";
+
 interface Props {
 	title: string;
 }
 
 const { title } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 ---
 
 <!doctype html>
@@ -12,15 +16,19 @@ const { title } = Astro.props;
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{title} — Procomeka</title>
+		<script define:vars={{ base, isPreview }}>
+			window.__BASE_URL__ = base;
+			window.__PREVIEW_MODE__ = isPreview;
+		</script>
 	</head>
-	<body>
+	<body class={isPreview ? "has-preview-banner" : ""}>
 		<header>
 			<nav>
-				<a href="/" class="brand">Procomeka</a>
+				<a href={base} class="brand">Procomeka</a>
 				<div class="nav-links">
-					<a href="/admin/recursos/nuevo">Crear recurso</a>
-					<a href="/login">Iniciar sesión</a>
-					<a href="/dashboard">Panel</a>
+					<a href={`${base}admin/recursos/nuevo`}>Crear recurso</a>
+					<a id="nav-login" href={`${base}login`}>Iniciar sesión</a>
+					<a id="nav-user" href={`${base}dashboard`} style="display:none;"></a>
 				</div>
 			</nav>
 		</header>
@@ -30,6 +38,27 @@ const { title } = Astro.props;
 		<footer>
 			<p>Plataforma de recursos educativos abiertos</p>
 		</footer>
+		<PreviewBanner />
+		<script>
+			import { getApiClient } from "../lib/get-api-client.ts";
+
+			const navLogin = document.getElementById("nav-login") as HTMLAnchorElement;
+			const navUser = document.getElementById("nav-user") as HTMLAnchorElement;
+
+			(async () => {
+				try {
+					const api = await getApiClient();
+					const session = await api.getSession();
+					if (session?.user) {
+						navLogin.style.display = "none";
+						navUser.textContent = session.user.email;
+						navUser.style.display = "";
+					}
+				} catch {
+					// Sin sesión: se queda "Iniciar sesión"
+				}
+			})();
+		</script>
 	</body>
 </html>
 
@@ -44,6 +73,10 @@ const { title } = Astro.props;
 		font-family: system-ui, -apple-system, sans-serif;
 		line-height: 1.6;
 		color: #1f2937;
+	}
+
+	body.has-preview-banner {
+		padding-bottom: 2.5rem;
 	}
 
 	header {

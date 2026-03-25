@@ -1,0 +1,98 @@
+---
+const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
+---
+
+{isPreview && (
+	<div id="preview-banner" class="preview-banner">
+		<span class="preview-label">Vista previa</span>
+		<span class="preview-role">
+			Rol: <select id="role-switcher">
+				<option value="admin">Admin</option>
+				<option value="curator">Curator</option>
+				<option value="author">Author</option>
+				<option value="reader">Reader</option>
+			</select>
+		</span>
+		<button id="reset-preview" type="button">Reiniciar datos</button>
+	</div>
+)}
+
+<style>
+	.preview-banner {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: #1e40af;
+		color: white;
+		padding: 0.4rem 1rem;
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		font-size: 0.8rem;
+		z-index: 9999;
+		justify-content: center;
+	}
+
+	.preview-label {
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.preview-role select {
+		background: rgba(255, 255, 255, 0.2);
+		color: white;
+		border: 1px solid rgba(255, 255, 255, 0.4);
+		border-radius: 3px;
+		padding: 0.15rem 0.3rem;
+		font-size: 0.8rem;
+		cursor: pointer;
+	}
+
+	.preview-role select option {
+		color: #1f2937;
+		background: white;
+	}
+
+	#reset-preview {
+		background: rgba(255, 255, 255, 0.2);
+		color: white;
+		border: 1px solid rgba(255, 255, 255, 0.4);
+		border-radius: 3px;
+		padding: 0.15rem 0.5rem;
+		font-size: 0.8rem;
+		cursor: pointer;
+	}
+
+	#reset-preview:hover {
+		background: rgba(255, 255, 255, 0.3);
+	}
+</style>
+
+<script>
+	const banner = document.getElementById("preview-banner");
+	if (banner) {
+		const switcher = document.getElementById("role-switcher") as HTMLSelectElement | null;
+		const resetBtn = document.getElementById("reset-preview");
+
+		// Restaurar rol guardado
+		const savedRole = localStorage.getItem("procomeka-preview-role") ?? "admin";
+		if (switcher) switcher.value = savedRole;
+
+		switcher?.addEventListener("change", async () => {
+			const { PreviewApiClient } = await import("../lib/preview-api-client.ts");
+			const client = await PreviewApiClient.getInstance();
+			client.switchRole(switcher.value);
+			window.location.reload();
+		});
+
+		resetBtn?.addEventListener("click", async () => {
+			resetBtn.textContent = "Reiniciando...";
+			const { PreviewApiClient } = await import("../lib/preview-api-client.ts");
+			const client = await PreviewApiClient.getInstance();
+			await client.resetDatabase();
+			window.location.reload();
+		});
+	}
+</script>

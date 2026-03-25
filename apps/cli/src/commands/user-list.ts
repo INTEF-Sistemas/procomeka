@@ -1,21 +1,22 @@
-import { Database } from "bun:sqlite";
+export async function userList() {
+	const { PGlite } = await import("@electric-sql/pglite");
+	const { createTables } = await import("@procomeka/db/setup");
 
-export function userList() {
-	const dbPath = process.env.DB_PATH ?? `${import.meta.dir}/../../../../local.db`;
-	const db = new Database(dbPath);
+	const dataDir = process.env.PGLITE_DIR ?? `${import.meta.dir}/../../../../local-data`;
+	const pglite = new PGlite(dataDir);
+	await createTables(pglite);
 
-	const users = db
-		.prepare(`SELECT id, email, name, role, is_active FROM "user"`)
-		.all() as Array<{
+	const result = await pglite.query<{
 		id: string;
 		email: string;
 		name: string;
 		role: string;
 		is_active: number;
-	}>;
+	}>(`SELECT id, email, name, role, is_active FROM "user"`);
 
-	db.close();
+	await pglite.close();
 
+	const users = result.rows;
 	if (users.length === 0) {
 		console.log("No hay usuarios registrados.");
 		return;

@@ -1,31 +1,8 @@
-import { eq, like, sql, desc, isNull, and } from "drizzle-orm";
+/**
+ * Thin wrapper: delega al repositorio compartido inyectando la instancia de DB.
+ */
 import { getDb } from "../db.ts";
-
-// Importaciones dinámicas según el provider
-function getSchema() {
-	const { provider } = getDb();
-	if (provider === "pg") {
-		return require("@procomeka/db/schema");
-	}
-	return require("../../../../packages/db/src/schema/resources-sqlite.ts");
-}
-
-type ResourceRow = {
-	id: string;
-	slug: string;
-	title: string;
-	description: string;
-	language: string;
-	license: string;
-	resourceType: string;
-	keywords: string | null;
-	author: string | null;
-	publisher: string | null;
-	editorialStatus: string;
-	deletedAt: unknown;
-	createdAt: unknown;
-	updatedAt: unknown;
-};
+import * as repo from "@procomeka/db/repository";
 
 export async function listResources(opts: {
 	limit?: number;
@@ -33,100 +10,15 @@ export async function listResources(opts: {
 	search?: string;
 	status?: string;
 }) {
-	const { db } = getDb();
-	const schema = getSchema();
-	const { resources } = schema;
-	const limit = Math.min(opts.limit ?? 20, 100);
-	const offset = opts.offset ?? 0;
-
-	const conditions = [isNull(resources.deletedAt)];
-	if (opts.search) {
-		conditions.push(like(resources.title, `%${opts.search}%`));
-	}
-	if (opts.status) {
-		conditions.push(eq(resources.editorialStatus, opts.status));
-	}
-
-	const where = conditions.reduce((a, b) => sql`${a} AND ${b}`);
-
-	const rows = await db
-		.select()
-		.from(resources)
-		.where(where)
-		.limit(limit)
-		.offset(offset)
-		.orderBy(desc(resources.createdAt));
-
-	const countResult = await db
-		.select({ count: sql<number>`count(*)` })
-		.from(resources)
-		.where(where);
-
-	const total = countResult[0]?.count ?? 0;
-
-	return { data: rows, total, limit, offset };
+	return repo.listResources(getDb().db, opts);
 }
 
 export async function getResourceById(id: string) {
-	const { db } = getDb();
-	const schema = getSchema();
-	const { resources, resourceSubjects, resourceLevels } = schema;
-
-	const rows = await db
-		.select()
-		.from(resources)
-		.where(and(eq(resources.id, id), isNull(resources.deletedAt)))
-		.limit(1);
-
-	const resource = rows[0] as ResourceRow | undefined;
-	if (!resource) return null;
-
-	const subjects = await db
-		.select({ subject: resourceSubjects.subject })
-		.from(resourceSubjects)
-		.where(eq(resourceSubjects.resourceId, resource.id));
-
-	const levels = await db
-		.select({ level: resourceLevels.level })
-		.from(resourceLevels)
-		.where(eq(resourceLevels.resourceId, resource.id));
-
-	return {
-		...resource,
-		subjects: subjects.map((s: { subject: string }) => s.subject),
-		levels: levels.map((l: { level: string }) => l.level),
-	};
+	return repo.getResourceById(getDb().db, id);
 }
 
 export async function getResourceBySlug(slug: string) {
-	const { db } = getDb();
-	const schema = getSchema();
-	const { resources, resourceSubjects, resourceLevels } = schema;
-
-	const rows = await db
-		.select()
-		.from(resources)
-		.where(and(eq(resources.slug, slug), isNull(resources.deletedAt)))
-		.limit(1);
-
-	const resource = rows[0] as ResourceRow | undefined;
-	if (!resource) return null;
-
-	const subjects = await db
-		.select({ subject: resourceSubjects.subject })
-		.from(resourceSubjects)
-		.where(eq(resourceSubjects.resourceId, resource.id));
-
-	const levels = await db
-		.select({ level: resourceLevels.level })
-		.from(resourceLevels)
-		.where(eq(resourceLevels.resourceId, resource.id));
-
-	return {
-		...resource,
-		subjects: subjects.map((s: { subject: string }) => s.subject),
-		levels: levels.map((l: { level: string }) => l.level),
-	};
+	return repo.getResourceBySlug(getDb().db, slug);
 }
 
 export async function createResource(data: {
@@ -141,49 +33,7 @@ export async function createResource(data: {
 	subjects?: string[];
 	levels?: string[];
 }) {
-	const { db } = getDb();
-	const schema = getSchema();
-	const { resources, resourceSubjects, resourceLevels } = schema;
-
-	const id = crypto.randomUUID();
-	const baseSlug = data.title
-		.toLowerCase()
-		.normalize("NFD")
-		.replace(/[\u0300-\u036f]/g, "")
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-|-$/g, "");
-	const slug = `${baseSlug}-${id.slice(0, 8)}`;
-	const now = new Date();
-
-	await db.insert(resources).values({
-		id,
-		slug,
-		title: data.title,
-		description: data.description,
-		language: data.language,
-		license: data.license,
-		resourceType: data.resourceType,
-		keywords: data.keywords ?? null,
-		author: data.author ?? null,
-		publisher: data.publisher ?? null,
-		editorialStatus: "draft",
-		createdAt: now,
-		updatedAt: now,
-	});
-
-	if (data.subjects?.length) {
-		for (const subject of data.subjects) {
-			await db.insert(resourceSubjects).values({ resourceId: id, subject });
-		}
-	}
-
-	if (data.levels?.length) {
-		for (const level of data.levels) {
-			await db.insert(resourceLevels).values({ resourceId: id, level });
-		}
-	}
-
-	return { id, slug };
+	return repo.createResource(getDb().db, data);
 }
 
 export async function updateResource(
@@ -199,25 +49,11 @@ export async function updateResource(
 		publisher: string;
 	}>,
 ) {
-	const { db } = getDb();
-	const schema = getSchema();
-	const { resources } = schema;
-
-	await db
-		.update(resources)
-		.set({ ...data, updatedAt: new Date() })
-		.where(and(eq(resources.id, id), isNull(resources.deletedAt)));
+	return repo.updateResource(getDb().db, id, data);
 }
 
 export async function deleteResource(id: string) {
-	const { db } = getDb();
-	const schema = getSchema();
-	const { resources } = schema;
-
-	await db
-		.update(resources)
-		.set({ deletedAt: new Date(), updatedAt: new Date() })
-		.where(and(eq(resources.id, id), isNull(resources.deletedAt)));
+	return repo.deleteResource(getDb().db, id);
 }
 
 export async function updateEditorialStatus(
@@ -225,21 +61,5 @@ export async function updateEditorialStatus(
 	status: string,
 	curatorId: string,
 ) {
-	const { db } = getDb();
-	const schema = getSchema();
-	const { resources } = schema;
-
-	const updates: Record<string, unknown> = {
-		editorialStatus: status,
-		assignedCuratorId: curatorId,
-		updatedAt: new Date(),
-	};
-	if (status === "published" || status === "archived") {
-		updates.curatedAt = new Date();
-	}
-
-	await db
-		.update(resources)
-		.set(updates)
-		.where(and(eq(resources.id, id), isNull(resources.deletedAt)));
+	return repo.updateEditorialStatus(getDb().db, id, status, curatorId);
 }

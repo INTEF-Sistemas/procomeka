@@ -8,21 +8,40 @@ Sustituto moderno de Procomún: plataforma de recursos educativos abiertos orien
 - **Runtime**: Bun (API, scripts, tests, builds)
 - El resto de tecnologías por capa se decide mediante ADRs
 
-## Preview estático para PRs
+## Modos de ejecución
 
-Para facilitar la revisión visual y funcional de la interfaz, el repositorio cuenta con un **entorno estático de previsualización** por cada Pull Request.
+| Modo | Base de datos | Auth | Uso |
+|------|---------------|------|-----|
+| **Producción** | PostgreSQL (`DATABASE_URL`) | Better Auth | Servidor real |
+| **Desarrollo local** | PGlite (file-backed en `local-data/`) | Better Auth | `make up` |
+| **Preview estático** | PGlite WASM (IndexedDB en navegador) | Usuarios demo | `make up-static` |
 
-- Este preview corre 100% en el navegador del cliente.
-- En lugar de conectar con el backend real, utiliza una base de datos local (mediante WASM y `sql.js` o similar) con un pequeño dataset representativo de demostración (recursos, colecciones, usuarios).
-- Se aloja a través de **Cloudflare Pages**, el cual genera una URL única de revisión por PR automáticamente.
-- **Importante:** Este entorno es sólo para recibir feedback rápido en las PRs. **No sustituye a los tests E2E ni a los despliegues reales con base de datos en entornos como Render.**
+### Desarrollo local
 
-Para lanzar este entorno de pruebas en local:
+No se necesita PostgreSQL instalado. PGlite actúa como PostgreSQL embebido:
 
 ```bash
-cd apps/frontend
-bun run build:preview-static
+make up        # Instala deps, ejecuta seed, arranca API + frontend
+make up-api    # Solo API (puerto 3000)
+make up-frontend  # Solo frontend (puerto 4321)
 ```
+
+### Preview estático para PRs
+
+Cada Pull Request publica automáticamente un preview en GitHub Pages usando PGlite WASM en el navegador. El preview:
+
+- Corre 100% en el navegador, sin servidor
+- Usa PGlite (PostgreSQL WASM) con datos de demostración
+- Incluye selector de rol (Admin/Curator/Author/Reader) y botón de reset
+- Se publica en `https://intef-proyectos.github.io/procomeka/pr-preview/pr-{N}/`
+
+Para probar el preview localmente:
+
+```bash
+make up-static   # Construye y sirve en http://localhost:8080/procomeka/
+```
+
+**Importante:** El preview es solo para feedback rápido en las PRs. No sustituye a los tests E2E ni a los despliegues reales.
 
 ## Estructura del repositorio
 
@@ -157,7 +176,8 @@ Antes de escribir código de negocio deben resolverse estas decisiones:
 | ADR | Capa | Estado |
 |-----|------|--------|
 | [ADR-0001](docs/negocio/decisiones/0001-typescript-bun-como-stack-base.md) | Stack base | Aceptado |
-| [ADR-0002](docs/negocio/decisiones/0002-preview-estatico-prs-con-sqlite.md) | Preview estático de PRs | Aceptado |
+| [ADR-0002](docs/negocio/decisiones/0002-preview-estatico-prs-con-sqlite.md) | Preview estático de PRs (SQLite) | Supersedido |
+| [ADR-0010](docs/negocio/decisiones/0010-preview-estatico-pglite-github-pages.md) | Preview estático con PGlite + GitHub Pages | Aceptado |
 | ADR-0003 | Framework HTTP para API | Pendiente |
 | ADR-0004 | Framework frontend | Pendiente |
 | ADR-0005 | Base de datos principal | Pendiente |

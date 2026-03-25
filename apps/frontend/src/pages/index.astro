@@ -15,17 +15,16 @@ import Base from "../layouts/Base.astro";
 </Base>
 
 <script>
+	import { getApiClient } from "../lib/get-api-client.ts";
+	import { url } from "../lib/paths.ts";
+
 	const list = document.getElementById("resources-list") as HTMLDivElement;
 	const searchInput = document.getElementById("search") as HTMLInputElement;
 
 	async function loadResources(query = "") {
-		const url = query
-			? `/api/v1/resources?q=${encodeURIComponent(query)}`
-			: "/api/v1/resources";
-
 		try {
-			const res = await fetch(url);
-			const { data, total } = await res.json();
+			const api = await getApiClient();
+			const { data, total } = await api.listResources(query ? { q: query } : undefined);
 
 			if (data.length === 0) {
 				list.innerHTML = "<p>No se encontraron recursos.</p>";
@@ -34,11 +33,11 @@ import Base from "../layouts/Base.astro";
 
 			list.innerHTML = data
 				.map(
-					(r: { slug: string; title: string; description: string; resource_type: string; editorial_status: string }) => `
-				<a href="/recurso?slug=${r.slug}" class="resource-card">
+					(r) => `
+				<a href="${url(`recurso?slug=${r.slug}`)}" class="resource-card">
 					<div class="card-header">
-						<span class="badge badge-${r.resource_type}">${r.resource_type}</span>
-						<span class="badge badge-status-${r.editorial_status}">${r.editorial_status}</span>
+						<span class="badge badge-${r.resourceType}">${r.resourceType}</span>
+						<span class="badge badge-status-${r.editorialStatus}">${r.editorialStatus}</span>
 					</div>
 					<h2>${r.title}</h2>
 					<p>${r.description.slice(0, 150)}${r.description.length > 150 ? "..." : ""}</p>
@@ -126,9 +125,10 @@ import Base from "../layouts/Base.astro";
 		color: #374151;
 	}
 
-	.badge-status-validado { background: #d1fae5; color: #065f46; }
-	.badge-status-destacado { background: #dbeafe; color: #1e40af; }
-	.badge-status-borrador { background: #fef3c7; color: #92400e; }
+	.badge-status-published { background: #d1fae5; color: #065f46; }
+	.badge-status-draft { background: #fef3c7; color: #92400e; }
+	.badge-status-review { background: #e0e7ff; color: #3730a3; }
+	.badge-status-archived { background: #e5e7eb; color: #374151; }
 
 	.loading { color: #9ca3af; }
 	.total { color: #9ca3af; font-size: 0.85rem; text-align: center; }

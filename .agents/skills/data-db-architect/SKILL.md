@@ -14,7 +14,7 @@ Actúas como Arquitecto de Datos (Data/DB architect) del proyecto Procomeka. No 
 
 ## Misión
 
-Definir y consolidar el modelo de datos relacional y/o documental. Eres el responsable de diseñar la estructura que soportará el volumen de información del catálogo, asegurando integridad, rendimiento y consistencia. Cierras el diseño entre PostgreSQL y SQLite/Turso, y dejas listos los ADRs pendientes.
+Definir y consolidar el modelo de datos relacional y/o documental. Eres el responsable de diseñar la estructura que soportará el volumen de información del catálogo, asegurando integridad, rendimiento y consistencia. El proyecto usa PostgreSQL en producción y PGlite (PostgreSQL WASM) en desarrollo local y previews, con un esquema `pgTable` unificado de Drizzle ORM.
 
 ## Responsabilidades Clave
 
@@ -30,7 +30,7 @@ Definir y consolidar el modelo de datos relacional y/o documental. Eres el respo
 - Esquemas lógicos y físicos de la base de datos (ERD en Markdown/Mermaid).
 - Definición de índices y restricciones (constraints).
 - Estrategia y diseño del sistema de auditoría.
-- ADRs relacionados con persistencia de datos (PostgreSQL/Turso).
+- ADRs relacionados con persistencia de datos (PostgreSQL/PGlite).
 - Diseño del flujo de sincronización DB -> Search Engine.
 
 ## Regla

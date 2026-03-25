@@ -31,13 +31,13 @@ En desarrollo
 - [x] Corregir configuración para que `bun test` no ejecute accidentalmente Playwright E2E.
 - [x] Añadir test automatizado TypeScript para validar separación unit/e2e.
 - [x] Añadir tests unitarios de servicio de recursos (casos válidos e inválidos).
-- [x] Añadir tests de rutas admin/públicas con persistencia real (mock DB o SQLite test).
+- [x] Añadir tests de rutas admin/públicas con persistencia real (PGlite en test).
 - [x] Ejecutar `bun test` en cada cambio de feature y registrar resultados.
 
 ## Trazabilidad de ejecución
 - 2026-03-25: se prepara la épica y se corrige la separación de tests unitarios vs E2E.
 - 2026-03-25: implementación completa de Épica 001:
-  - Schema: añadido `deleted_at` a tablas PG y SQLite, cambiado default status a `draft`, añadidos índices.
+  - Schema: añadido `deleted_at` a tablas PG, cambiado default status a `draft`, añadidos índices.
   - Validación: módulo `validation.ts` con funciones puras (26 tests).
   - Repository: soft delete, filtro `deleted_at IS NULL`, `getResourceById`, status en inglés.
   - Rutas admin: GET list/detail, POST con validación por campo, PATCH, soft DELETE.

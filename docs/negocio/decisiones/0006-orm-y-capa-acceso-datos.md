@@ -6,19 +6,19 @@
 
 ## Contexto y Problema
 
-Tras decidir PostgreSQL como base de datos principal (ADR-0005) con SQLite para previews y tests rápidos, se necesita definir la capa de acceso a datos.
+Tras decidir PostgreSQL como base de datos principal (ADR-0005), se necesita definir la capa de acceso a datos. Con la adopción de PGlite (ADR-0010), todos los entornos usan PostgreSQL (real o WASM), por lo que solo se necesita soporte para un dialecto SQL.
 
-Se evalúan tres alternativas:
+Se evalúan dos alternativas:
 
-1. **Usar un ORM/query builder** que gestione esquema, migraciones y consultas tipadas para ambos motores.
-2. **No usar ORM** y trabajar directamente con los drivers nativos de Bun (`bun:sql` para PostgreSQL, `bun:sqlite` para SQLite).
+1. **Usar un ORM/query builder** que gestione esquema, migraciones y consultas tipadas.
+2. **No usar ORM** y trabajar directamente con los drivers nativos de Bun (`bun:sql` para PostgreSQL).
 
 La opción "sin ORM" implicaría construir un sistema de migraciones propio y renunciar a tipado automático de consultas, lo que contradice el principio de "antes de desarrollo propio, evaluar si existe solución de mercado adecuada" (AGENTS.md, regla 8). Se descarta como opción principal y se evalúan los ORM/query builders disponibles.
 
 Restricciones:
 
 - Stack fijo: TypeScript strict + Bun.
-- Soporte dual obligatorio: PostgreSQL (producción/staging) + SQLite (preview/tests).
+- Soporte PostgreSQL en todos los entornos (producción vía PostgreSQL real, dev/preview vía PGlite).
 - Migraciones versionadas y auditables (ADR-0005, nota de implementación 3).
 - Simplicidad y menor fricción posible con el runtime Bun.
 
@@ -99,8 +99,8 @@ Se adopta **Drizzle ORM** como capa de acceso a datos y migraciones.
 
 Justificación principal:
 
-1. **Mejor encaje nativo con Bun**: es el único ORM con drivers oficiales para `bun:sql` (PostgreSQL) y `bun:sqlite` sin workarounds.
-2. **Soporte dual sin fricción**: la estrategia PostgreSQL + SQLite de ADR-0005 se implementa de forma natural.
+1. **Mejor encaje nativo con Bun**: drivers oficiales para `bun:sql` (PostgreSQL) y `drizzle-orm/pglite` (PGlite) sin workarounds.
+2. **Esquema unificado**: un solo esquema `pgTable` funciona en PostgreSQL real y PGlite (dev/preview) sin duplicación.
 3. **Migraciones SQL plano**: `drizzle-kit` genera migraciones versionadas en SQL puro, cumpliendo el requisito de auditabilidad.
 4. **Mínimo lock-in**: esquemas en TypeScript estándar, sin lenguaje propietario ni binarios adicionales.
 5. **Simplicidad**: ligero, sin dependencias, cercano a SQL — alineado con el principio de mínima complejidad necesaria.
@@ -108,7 +108,7 @@ Justificación principal:
 ## Consecuencias
 
 ### Positivas
-* Se habilita la estrategia dual PostgreSQL/SQLite con un único ORM y drivers nativos de Bun.
+* Se habilita la estrategia PostgreSQL/PGlite con un único ORM, esquema unificado y drivers nativos de Bun.
 * Las migraciones son SQL plano versionado, auditables y portables.
 * El equipo mantiene control explícito sobre las consultas generadas.
 * Menor superficie de dependencias y menor complejidad de despliegue (sin binarios externos).
@@ -118,7 +118,7 @@ Justificación principal:
 * Menor nivel de abstracción que Prisma: requiere más conocimiento de SQL para consultas complejas.
 * No incluye herramientas visuales tipo Prisma Studio para exploración de datos.
 * Ecosistema más joven que Prisma, aunque en crecimiento rápido.
-* Riesgo de divergencia SQL entre PostgreSQL y SQLite si no se controla el subconjunto SQL utilizado (riesgo ya identificado en ADR-0005).
+* ~~Riesgo de divergencia SQL entre PostgreSQL y SQLite~~ — eliminado con la adopción de PGlite (ADR-0010): todos los entornos usan PostgreSQL.
 
 ## Notas de Implementación
 
@@ -126,10 +126,9 @@ Justificación principal:
    - Definir esquemas Drizzle en `packages/db/schema/` con TypeScript strict.
    - Separar definiciones de tabla por dominio (resources, users, collections, etc.).
 
-2. **Configuración dual**
-   - `drizzle.config.ts` con dialect `postgresql` para producción/staging.
-   - Configuración alternativa con dialect `sqlite` para preview/tests.
-   - Variable de entorno para seleccionar el motor activo.
+2. **Configuración unificada**
+   - `drizzle.config.ts` con dialect `postgresql` para todos los entornos.
+   - PGlite para desarrollo local y preview; PostgreSQL real para producción.
 
 3. **Migraciones**
    - Generar con `bunx drizzle-kit generate`.
@@ -137,14 +136,13 @@ Justificación principal:
    - Mantener migraciones en control de versiones bajo `packages/db/migrations/`.
    - Validar compatibilidad dual en CI (ejecutar migraciones contra ambos motores).
 
-4. **Perfil SQL portable**
-   - Documentar el subconjunto SQL seguro para ambos motores.
-   - Evitar features exclusivas de PostgreSQL (JSONB, arrays, etc.) en código que deba ejecutarse también en SQLite para preview.
-   - Usar features avanzadas de PostgreSQL solo en código marcado explícitamente como "solo producción".
+4. **SQL PostgreSQL unificado**
+   - Con PGlite en todos los entornos no-producción, ya no hay restricción de "perfil SQL portable".
+   - Se pueden usar features de PostgreSQL (JSONB, arrays, FTS) sabiendo que PGlite las soporta.
 
 5. **Criterios de revisión**
    - Reabrir esta decisión si:
      (a) Drizzle pierde soporte activo para drivers nativos de Bun.
-     (b) La divergencia SQL PostgreSQL/SQLite genera fricción no asumible.
+     (b) PGlite deja de ser viable para desarrollo o preview.
      (c) Requisitos de negocio exigen capacidades de ORM no cubiertas por Drizzle.
      (d) Prisma u otra alternativa resuelve sus limitaciones con Bun de forma nativa.
