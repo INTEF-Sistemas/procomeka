@@ -38,6 +38,13 @@ describe("Rutas públicas /api/v1", () => {
 		const body = await res.json();
 		expect(body.data).toEqual([]);
 	});
+
+	test("GET /api/v1/collections/:slug devuelve slug", async () => {
+		const res = await app.request("/api/v1/collections/mi-coleccion");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.slug).toBe("mi-coleccion");
+	});
 });
 
 describe("Rutas admin /api/admin — sin autenticación", () => {
