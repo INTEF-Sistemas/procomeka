@@ -1,0 +1,66 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Recurso">
+	<div id="resource-detail">
+		<p class="loading">Cargando recurso...</p>
+	</div>
+</Base>
+
+<script>
+	const container = document.getElementById("resource-detail") as HTMLDivElement;
+	const params = new URLSearchParams(window.location.search);
+	const slug = params.get("slug");
+
+	async function loadResource() {
+		if (!slug) {
+			container.innerHTML = "<p>No se especificó un recurso.</p><a href='/'>Volver al inicio</a>";
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/v1/resources/${slug}`);
+			if (!res.ok) {
+				container.innerHTML = "<p>Recurso no encontrado.</p><a href='/'>Volver al inicio</a>";
+				return;
+			}
+
+			const r = await res.json();
+			container.innerHTML = `
+				<nav class="breadcrumb"><a href="/">Recursos</a> / ${r.title}</nav>
+				<h1>${r.title}</h1>
+				<div class="meta">
+					<span class="badge">${r.resource_type ?? r.resourceType}</span>
+					<span class="badge badge-${r.editorial_status ?? r.editorialStatus}">${r.editorial_status ?? r.editorialStatus}</span>
+					<span>${r.language}</span>
+					<span>${r.license}</span>
+				</div>
+				<p class="description">${r.description}</p>
+				${r.author ? `<p class="field"><strong>Autor:</strong> ${r.author}</p>` : ""}
+				${r.publisher ? `<p class="field"><strong>Editor:</strong> ${r.publisher}</p>` : ""}
+				${r.keywords ? `<p class="field"><strong>Palabras clave:</strong> ${r.keywords}</p>` : ""}
+				${r.subjects?.length ? `<p class="field"><strong>Materias:</strong> ${r.subjects.join(", ")}</p>` : ""}
+				${r.levels?.length ? `<p class="field"><strong>Niveles:</strong> ${r.levels.join(", ")}</p>` : ""}
+			`;
+		} catch {
+			container.innerHTML = "<p>Error al cargar el recurso.</p>";
+		}
+	}
+
+	loadResource();
+</script>
+
+<style>
+	.breadcrumb { color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem; }
+	.breadcrumb a { color: #1a56db; text-decoration: none; }
+	h1 { margin-bottom: 0.75rem; }
+	.meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; color: #6b7280; font-size: 0.85rem; }
+	.badge { padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; background: #e5e7eb; color: #374151; }
+	.badge-validado { background: #d1fae5; color: #065f46; }
+	.badge-destacado { background: #dbeafe; color: #1e40af; }
+	.badge-borrador { background: #fef3c7; color: #92400e; }
+	.description { font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; }
+	.field { margin: 0.25rem 0; font-size: 0.9rem; }
+	.loading { color: #9ca3af; }
+</style>

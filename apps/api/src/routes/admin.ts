@@ -4,37 +4,55 @@ import {
 	requireAuth,
 	requireRole,
 } from "../auth/middleware.ts";
+import {
+	createResource,
+	updateResource,
+	deleteResource,
+	updateEditorialStatus,
+} from "../resources/repository.ts";
 
-/**
- * Rutas admin/editorial — requieren autenticación y RBAC.
- * Vista de administración: creación, edición, curación y gestión.
- */
 const adminRoutes = new Hono<AuthEnv>();
 
-// Todas las rutas admin requieren autenticación
 adminRoutes.use("*", requireAuth);
 
-// Recursos — CRUD editorial
-adminRoutes.post("/resources", requireRole("author"), (c) =>
-	c.json({ message: "Crear recurso (pendiente)" }, 201),
-);
+adminRoutes.post("/resources", requireRole("author"), async (c) => {
+	const body = await c.req.json();
 
-adminRoutes.put("/resources/:id", requireRole("author"), (c) => {
-	const { id } = c.req.param();
-	return c.json({ id, message: "Actualizar recurso (pendiente)" });
+	if (!body.title || !body.description || !body.language || !body.license || !body.resourceType) {
+		return c.json({ error: "Campos obligatorios: title, description, language, license, resourceType" }, 400);
+	}
+
+	const result = await createResource(body);
+	return c.json(result, 201);
 });
 
-adminRoutes.delete("/resources/:id", requireRole("admin"), (c) => {
+adminRoutes.put("/resources/:id", requireRole("author"), async (c) => {
 	const { id } = c.req.param();
-	return c.json({ id, message: "Eliminar recurso (pendiente)" });
+	const body = await c.req.json();
+	await updateResource(id, body);
+	return c.json({ id, updated: true });
 });
 
-adminRoutes.patch("/resources/:id/status", requireRole("curator"), (c) => {
+adminRoutes.delete("/resources/:id", requireRole("admin"), async (c) => {
 	const { id } = c.req.param();
-	return c.json({ id, message: "Cambiar estado editorial (pendiente)" });
+	await deleteResource(id);
+	return c.json({ id, deleted: true });
 });
 
-// Usuarios — gestión (solo admin)
+adminRoutes.patch("/resources/:id/status", requireRole("curator"), async (c) => {
+	const { id } = c.req.param();
+	const body = await c.req.json();
+
+	if (!body.status) {
+		return c.json({ error: "Campo obligatorio: status" }, 400);
+	}
+
+	const user = c.get("user");
+	const userId = (user as { id: string }).id;
+	await updateEditorialStatus(id, body.status, userId);
+	return c.json({ id, status: body.status });
+});
+
 adminRoutes.get("/users", requireRole("admin"), (c) =>
 	c.json({ data: [], total: 0, message: "Listado de usuarios (pendiente)" }),
 );

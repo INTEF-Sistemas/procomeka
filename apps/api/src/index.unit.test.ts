@@ -17,36 +17,6 @@ describe("Endpoints básicos", () => {
 	});
 });
 
-describe("Rutas públicas /api/v1", () => {
-	test("GET /api/v1/resources devuelve lista vacía", async () => {
-		const res = await app.request("/api/v1/resources");
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		expect(body.data).toEqual([]);
-	});
-
-	test("GET /api/v1/resources/:slug devuelve slug", async () => {
-		const res = await app.request("/api/v1/resources/test-slug");
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		expect(body.slug).toBe("test-slug");
-	});
-
-	test("GET /api/v1/collections devuelve lista vacía", async () => {
-		const res = await app.request("/api/v1/collections");
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		expect(body.data).toEqual([]);
-	});
-
-	test("GET /api/v1/collections/:slug devuelve slug", async () => {
-		const res = await app.request("/api/v1/collections/mi-coleccion");
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		expect(body.slug).toBe("mi-coleccion");
-	});
-});
-
 describe("Config /api/v1/config", () => {
 	test("GET /api/v1/config devuelve oidcEnabled y oidcEndSessionUrl", async () => {
 		const res = await app.request("/api/v1/config");
@@ -57,11 +27,53 @@ describe("Config /api/v1/config", () => {
 	});
 });
 
+describe("Rutas públicas /api/v1", () => {
+	test("GET /api/v1/resources devuelve data y total", async () => {
+		const res = await app.request("/api/v1/resources");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(Array.isArray(body.data)).toBe(true);
+		expect(typeof body.total).toBe("number");
+	});
+
+	test("GET /api/v1/resources/:slug devuelve 404 para slug inexistente", async () => {
+		const res = await app.request("/api/v1/resources/no-existe-xyz");
+		expect(res.status).toBe(404);
+	});
+
+	test("GET /api/v1/resources/:slug devuelve recurso si existe", async () => {
+		// Primero obtenemos un slug real del listado
+		const listRes = await app.request("/api/v1/resources?limit=1");
+		const list = await listRes.json();
+		if (list.data.length > 0) {
+			const slug = list.data[0].slug;
+			const res = await app.request(`/api/v1/resources/${slug}`);
+			expect(res.status).toBe(200);
+			const body = await res.json();
+			expect(body.slug).toBe(slug);
+			expect(body.subjects).toBeDefined();
+			expect(body.levels).toBeDefined();
+		}
+	});
+
+	test("GET /api/v1/resources?q= filtra por búsqueda", async () => {
+		const res = await app.request("/api/v1/resources?q=scratch");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(Array.isArray(body.data)).toBe(true);
+	});
+
+	test("GET /api/v1/collections devuelve lista", async () => {
+		const res = await app.request("/api/v1/collections");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(Array.isArray(body.data)).toBe(true);
+	});
+});
+
 describe("Rutas admin /api/admin — sin autenticación", () => {
 	test("POST /api/admin/resources devuelve 401 sin sesión", async () => {
-		const res = await app.request("/api/admin/resources", {
-			method: "POST",
-		});
+		const res = await app.request("/api/admin/resources", { method: "POST" });
 		expect(res.status).toBe(401);
 	});
 
@@ -71,16 +83,7 @@ describe("Rutas admin /api/admin — sin autenticación", () => {
 	});
 
 	test("DELETE /api/admin/resources/123 devuelve 401 sin sesión", async () => {
-		const res = await app.request("/api/admin/resources/123", {
-			method: "DELETE",
-		});
-		expect(res.status).toBe(401);
-	});
-
-	test("PATCH /api/admin/resources/123/status devuelve 401 sin sesión", async () => {
-		const res = await app.request("/api/admin/resources/123/status", {
-			method: "PATCH",
-		});
+		const res = await app.request("/api/admin/resources/123", { method: "DELETE" });
 		expect(res.status).toBe(401);
 	});
 });

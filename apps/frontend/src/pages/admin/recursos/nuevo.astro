@@ -1,0 +1,169 @@
+---
+import Base from "../../../layouts/Base.astro";
+---
+
+<Base title="Crear recurso">
+	<div class="form-container">
+		<h1>Crear recurso</h1>
+
+		<div id="auth-check" style="display:none;">
+			<p>Necesitas <a href="/login">iniciar sesión</a> como autor o superior para crear recursos.</p>
+		</div>
+
+		<div id="error-message" class="error" style="display:none;"></div>
+		<div id="success-message" class="success" style="display:none;"></div>
+
+		<form id="resource-form" style="display:none;">
+			<div class="field">
+				<label for="title">Título *</label>
+				<input type="text" id="title" required />
+			</div>
+
+			<div class="field">
+				<label for="description">Descripción *</label>
+				<textarea id="description" rows="4" required></textarea>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<label for="language">Idioma *</label>
+					<select id="language" required>
+						<option value="es">Español</option>
+						<option value="en">Inglés</option>
+						<option value="ca">Catalán</option>
+						<option value="eu">Euskera</option>
+						<option value="gl">Gallego</option>
+					</select>
+				</div>
+
+				<div class="field">
+					<label for="license">Licencia *</label>
+					<select id="license" required>
+						<option value="cc-by">CC BY</option>
+						<option value="cc-by-sa">CC BY-SA</option>
+						<option value="cc-by-nc">CC BY-NC</option>
+						<option value="cc-by-nc-sa">CC BY-NC-SA</option>
+						<option value="cc0">CC0 (Dominio público)</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="field">
+				<label for="resourceType">Tipo de recurso *</label>
+				<select id="resourceType" required>
+					<option value="documento">Documento</option>
+					<option value="presentacion">Presentación</option>
+					<option value="video">Vídeo</option>
+					<option value="audio">Audio</option>
+					<option value="imagen">Imagen</option>
+					<option value="actividad-interactiva">Actividad interactiva</option>
+					<option value="secuencia-didactica">Secuencia didáctica</option>
+					<option value="ejercicio">Ejercicio</option>
+					<option value="evaluacion">Evaluación</option>
+					<option value="proyecto">Proyecto</option>
+				</select>
+			</div>
+
+			<div class="field">
+				<label for="author">Autor</label>
+				<input type="text" id="author" />
+			</div>
+
+			<div class="field">
+				<label for="keywords">Palabras clave (separadas por comas)</label>
+				<input type="text" id="keywords" placeholder="matemáticas, fracciones, visual" />
+			</div>
+
+			<button type="submit" id="submit-btn">Crear recurso</button>
+		</form>
+	</div>
+</Base>
+
+<script>
+	const form = document.getElementById("resource-form") as HTMLFormElement;
+	const authCheck = document.getElementById("auth-check") as HTMLDivElement;
+	const errorDiv = document.getElementById("error-message") as HTMLDivElement;
+	const successDiv = document.getElementById("success-message") as HTMLDivElement;
+
+	async function checkAuth() {
+		try {
+			const res = await fetch("/api/auth/get-session", { credentials: "include" });
+			if (!res.ok) { authCheck.style.display = "block"; return; }
+			const data = await res.json();
+			if (!data?.user) { authCheck.style.display = "block"; return; }
+
+			const role = data.user.role ?? "reader";
+			const hierarchy = ["reader", "author", "curator", "admin"];
+			if (hierarchy.indexOf(role) < 1) {
+				authCheck.style.display = "block";
+				return;
+			}
+			form.style.display = "block";
+		} catch {
+			authCheck.style.display = "block";
+		}
+	}
+
+	form.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		errorDiv.style.display = "none";
+		successDiv.style.display = "none";
+
+		const body = {
+			title: (document.getElementById("title") as HTMLInputElement).value,
+			description: (document.getElementById("description") as HTMLTextAreaElement).value,
+			language: (document.getElementById("language") as HTMLSelectElement).value,
+			license: (document.getElementById("license") as HTMLSelectElement).value,
+			resourceType: (document.getElementById("resourceType") as HTMLSelectElement).value,
+			author: (document.getElementById("author") as HTMLInputElement).value || undefined,
+			keywords: (document.getElementById("keywords") as HTMLInputElement).value || undefined,
+		};
+
+		try {
+			const res = await fetch("/api/admin/resources", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+				body: JSON.stringify(body),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				successDiv.innerHTML = `Recurso creado. <a href="/recursos/${data.slug}">Ver recurso</a>`;
+				successDiv.style.display = "block";
+				form.reset();
+			} else {
+				const data = await res.json().catch(() => null);
+				errorDiv.textContent = data?.error ?? "Error al crear el recurso";
+				errorDiv.style.display = "block";
+			}
+		} catch {
+			errorDiv.textContent = "Error de conexión";
+			errorDiv.style.display = "block";
+		}
+	});
+
+	checkAuth();
+</script>
+
+<style>
+	.form-container { max-width: 600px; margin: 0 auto; }
+	h1 { margin-bottom: 1.5rem; }
+	.field { margin-bottom: 1rem; }
+	label { display: block; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.9rem; }
+	input, textarea, select {
+		width: 100%; padding: 0.5rem; border: 1px solid #d1d5db;
+		border-radius: 4px; font-size: 1rem; box-sizing: border-box;
+	}
+	textarea { resize: vertical; }
+	.row { display: flex; gap: 1rem; }
+	.row .field { flex: 1; }
+	button {
+		width: 100%; padding: 0.75rem; background: #1a56db; color: white;
+		border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; margin-top: 0.5rem;
+	}
+	button:hover { background: #1e40af; }
+	.error { background: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; }
+	.success { background: #d1fae5; color: #065f46; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; }
+	.success a { color: #065f46; font-weight: 600; }
+</style>

@@ -1,26 +1,28 @@
 import { Hono } from "hono";
+import { listResources, getResourceBySlug } from "../resources/repository.ts";
 
-/**
- * Rutas públicas — sin autenticación requerida.
- * Vista pública de la plataforma: búsqueda, consulta de recursos y colecciones.
- */
 const publicRoutes = new Hono();
 
-publicRoutes.get("/resources", (c) =>
-	c.json({ data: [], total: 0, message: "Listado de recursos (pendiente)" }),
-);
+publicRoutes.get("/resources", async (c) => {
+	const limit = Number(c.req.query("limit") ?? "20");
+	const offset = Number(c.req.query("offset") ?? "0");
+	const search = c.req.query("q") ?? undefined;
 
-publicRoutes.get("/resources/:slug", (c) => {
+	const result = await listResources({ limit, offset, search });
+	return c.json(result);
+});
+
+publicRoutes.get("/resources/:slug", async (c) => {
 	const { slug } = c.req.param();
-	return c.json({ slug, message: "Detalle de recurso (pendiente)" });
+	const resource = await getResourceBySlug(slug);
+	if (!resource) {
+		return c.json({ error: "Recurso no encontrado" }, 404);
+	}
+	return c.json(resource);
 });
 
 publicRoutes.get("/collections", (c) =>
-	c.json({
-		data: [],
-		total: 0,
-		message: "Listado de colecciones (pendiente)",
-	}),
+	c.json({ data: [], total: 0 }),
 );
 
 publicRoutes.get("/collections/:slug", (c) => {

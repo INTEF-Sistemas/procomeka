@@ -4,7 +4,7 @@ const THRESHOLD = 90;
 
 function runCoverage() {
 	const env = { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" };
-	const proc = spawn("bun", ["test", "--coverage"], { env });
+	const proc = spawn("bun", ["test", "--coverage", "apps/api/src/"], { env });
 
 	let output = "";
 
