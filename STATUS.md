@@ -30,6 +30,12 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 2. Actualizar siempre la "Fase Actual" y el "Agente en turno" al traspasar responsabilidad.
 3. Marcar las ADRs como `[x]` cuando sean aceptadas e incluir el enlace al archivo markdown.
 
+| 2026-03-25 | `evaluacion-tecnologica + direccion-de-plataforma + backend-api-servicios` | ADR-0005 de base de datos principal completada: PostgreSQL (principal) + SQLite (preview PR) en `docs/negocio/decisiones/0005-base-de-datos-principal.md` | Completado |
+
+## Actualización de ADRs Bloqueantes (2026-03-25)
+
+- [x] **ADR-0005**: Base de datos principal (resuelta en `docs/negocio/decisiones/0005-base-de-datos-principal.md`)
+- [ ] **Nota**: el tablero histórico listaba numeración distinta para "base de datos" y "motor de búsqueda"; se mantiene el historial y se alinea numeración a la solicitud vigente del usuario.
 ## Actualización 2026-03-25 (Evaluación tecnológica frontend)
 
 - Se completa la decisión de framework frontend en `docs/negocio/decisiones/0004-framework-frontend.md`.
