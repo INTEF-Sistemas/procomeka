@@ -1,6 +1,6 @@
 # ADR-0003 Framework HTTP para API backend (TypeScript strict + Bun)
 
-* Estado: Propuesto
+* Estado: Aceptado
 * Fecha: 2026-03-25
 * Agentes Implicados: [@.agents/skills/evaluacion-tecnologica/SKILL.md, @.agents/skills/backend-api-servicios/SKILL.md, @.agents/skills/direccion-de-plataforma/SKILL.md]
 
