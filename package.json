@@ -10,9 +10,9 @@
     "dev:frontend": "bun run --filter '@procomeka/frontend' dev",
     "lint": "biome lint .",
     "format": "biome format --write .",
-    "test": "bun test --coverage",
-    "test:unit": "bun test --coverage --test-name-pattern '.*'",
-    "test:integration": "bun test --coverage --test-name-pattern '.*'",
+    "test": "bun test --coverage tests",
+    "test:unit": "bun test --coverage tests",
+    "test:integration": "bun test --coverage tests",
     "test:e2e": "playwright test --project=chromium",
     "check-coverage": "bun run scripts/check-coverage.ts",
     "test:e2e:firefox": "playwright test --project=firefox"
