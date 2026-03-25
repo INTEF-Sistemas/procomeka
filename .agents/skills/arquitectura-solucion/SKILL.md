@@ -1,6 +1,6 @@
 ---
 name: arquitectura-solucion
-description: Rol de Arquitecto/a de Solución. Usa este skill para convertir una necesidad validada en diseño técnico trazable: componentes, flujos, contratos de API, modelo de datos y estrategia de pruebas.
+description: "Rol de Arquitecto/a de Solución. Usa este skill para convertir una necesidad validada en diseño técnico trazable: componentes, flujos, contratos de API, modelo de datos y estrategia de pruebas."
 metadata:
   author: procomeka
   version: "1.0"
