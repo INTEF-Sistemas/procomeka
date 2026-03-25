@@ -16,7 +16,8 @@
     "test:e2e:firefox": "playwright test --project=firefox"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "devDependencies": {
     "@types/bun": "latest",

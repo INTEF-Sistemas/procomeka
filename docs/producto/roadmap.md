@@ -2,7 +2,7 @@
 
 ## Estado: Fase 1 — MVP de catálogo
 
-El proyecto está en fase de definición. No hay código de aplicación todavía.
+Estructura base del monorepo implementada. Primera iteración de código en marcha.
 
 ---
 
@@ -30,7 +30,7 @@ El proyecto está en fase de definición. No hay código de aplicación todavía
 | Épica | Estado |
 |-------|--------|
 | Modelo de metadatos mínimo | No iniciada |
-| Arquitectura base del sistema | No iniciada |
+| Arquitectura base del sistema | En progreso — monorepo, Hono, Astro, Drizzle configurados |
 | Flujo editorial de recursos | No iniciada |
 | Búsqueda y facetas iniciales | No iniciada |
 | API REST pública v1 | No iniciada |
