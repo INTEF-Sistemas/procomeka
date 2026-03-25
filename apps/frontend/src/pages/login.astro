@@ -66,12 +66,12 @@ import Base from "../layouts/Base.astro";
 		errorDiv.style.display = "none";
 
 		try {
-			const res = await fetch("/api/auth/sign-in/social", {
+			const res = await fetch("/api/auth/sign-in/oauth2", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
 				body: JSON.stringify({
-					provider: "oidc",
+					providerId: "oidc",
 					callbackURL: "/dashboard",
 				}),
 				redirect: "manual",
