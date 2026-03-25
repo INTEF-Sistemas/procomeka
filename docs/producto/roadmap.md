@@ -31,6 +31,7 @@ Estructura base del monorepo implementada. Primera iteración de código en marc
 |-------|--------|
 | Modelo de metadatos mínimo | No iniciada |
 | Arquitectura base del sistema | En progreso — monorepo, Hono, Astro, Drizzle configurados |
+| Autenticación y autorización | En progreso — Better Auth + RBAC (ADR-0007, ADR-0008), CLI usuarios |
 | Flujo editorial de recursos | No iniciada |
 | Búsqueda y facetas iniciales | No iniciada |
 | API REST pública v1 | No iniciada |

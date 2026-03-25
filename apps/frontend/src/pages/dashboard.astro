@@ -1,0 +1,178 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Panel">
+	<div class="dashboard-container">
+		<div id="loading">Cargando sesión...</div>
+
+		<div id="not-authenticated" style="display:none;">
+			<p>No has iniciado sesión.</p>
+			<a href="/login">Iniciar sesión</a>
+		</div>
+
+		<div id="authenticated" style="display:none;">
+			<h1>Panel de <span id="user-name"></span></h1>
+			<div class="user-info">
+				<p><strong>Email:</strong> <span id="user-email"></span></p>
+				<p><strong>Rol:</strong> <span id="user-role" class="badge"></span></p>
+			</div>
+
+			<div id="admin-section" class="section" style="display:none;">
+				<h2>Administración</h2>
+				<p>Tienes acceso de administrador. Puedes gestionar usuarios, recursos y colecciones.</p>
+			</div>
+
+			<div id="curator-section" class="section" style="display:none;">
+				<h2>Curación</h2>
+				<p>Puedes revisar y validar recursos del catálogo.</p>
+			</div>
+
+			<div id="author-section" class="section" style="display:none;">
+				<h2>Mis recursos</h2>
+				<p>Puedes crear y editar tus propios recursos educativos.</p>
+			</div>
+
+			<button id="logout-btn">Cerrar sesión</button>
+		</div>
+	</div>
+</Base>
+
+<script>
+	async function loadSession() {
+		const loading = document.getElementById("loading") as HTMLDivElement;
+		const notAuth = document.getElementById("not-authenticated") as HTMLDivElement;
+		const auth = document.getElementById("authenticated") as HTMLDivElement;
+
+		try {
+			const res = await fetch("/api/auth/get-session", {
+				credentials: "include",
+			});
+
+			if (!res.ok) {
+				loading.style.display = "none";
+				notAuth.style.display = "block";
+				return;
+			}
+
+			const data = await res.json();
+			if (!data?.user) {
+				loading.style.display = "none";
+				notAuth.style.display = "block";
+				return;
+			}
+
+			const user = data.user;
+			(document.getElementById("user-name") as HTMLSpanElement).textContent = user.name;
+			(document.getElementById("user-email") as HTMLSpanElement).textContent = user.email;
+
+			const roleBadge = document.getElementById("user-role") as HTMLSpanElement;
+			roleBadge.textContent = user.role ?? "reader";
+			roleBadge.className = `badge badge-${user.role ?? "reader"}`;
+
+			const role = user.role ?? "reader";
+			const roleHierarchy = ["reader", "author", "curator", "admin"];
+			const level = roleHierarchy.indexOf(role);
+
+			if (level >= 1) {
+				(document.getElementById("author-section") as HTMLDivElement).style.display = "block";
+			}
+			if (level >= 2) {
+				(document.getElementById("curator-section") as HTMLDivElement).style.display = "block";
+			}
+			if (level >= 3) {
+				(document.getElementById("admin-section") as HTMLDivElement).style.display = "block";
+			}
+
+			loading.style.display = "none";
+			auth.style.display = "block";
+		} catch {
+			loading.style.display = "none";
+			notAuth.style.display = "block";
+		}
+	}
+
+	document.getElementById("logout-btn")?.addEventListener("click", async () => {
+		await fetch("/api/auth/sign-out", {
+			method: "POST",
+			credentials: "include",
+		});
+
+		// Redirigir al end_session del proveedor OIDC si el usuario entró por SSO
+		try {
+			const configRes = await fetch("/api/v1/config");
+			const config = await configRes.json();
+			if (config.oidcEnabled && config.oidcEndSessionUrl) {
+				const returnUrl = `${window.location.origin}/login`;
+				window.location.href = `${config.oidcEndSessionUrl}?post_logout_redirect_uri=${encodeURIComponent(returnUrl)}`;
+				return;
+			}
+		} catch { /* si falla, logout local es suficiente */ }
+
+		window.location.href = "/login";
+	});
+
+	loadSession();
+</script>
+
+<style>
+	.dashboard-container {
+		max-width: 600px;
+		margin: 2rem auto;
+		padding: 2rem;
+	}
+
+	.user-info {
+		background: #f3f4f6;
+		padding: 1rem;
+		border-radius: 4px;
+		margin-bottom: 1.5rem;
+	}
+
+	.user-info p {
+		margin: 0.25rem 0;
+	}
+
+	.section {
+		border: 1px solid #e5e7eb;
+		padding: 1rem;
+		border-radius: 4px;
+		margin-bottom: 1rem;
+	}
+
+	.section h2 {
+		margin-top: 0;
+		font-size: 1.1rem;
+	}
+
+	.badge {
+		display: inline-block;
+		padding: 0.15rem 0.5rem;
+		border-radius: 4px;
+		font-size: 0.8rem;
+		font-weight: 600;
+		text-transform: uppercase;
+	}
+
+	.badge-admin { background: #fecaca; color: #991b1b; }
+	.badge-curator { background: #dbeafe; color: #1e40af; }
+	.badge-author { background: #d1fae5; color: #065f46; }
+	.badge-reader { background: #e5e7eb; color: #374151; }
+
+	button {
+		padding: 0.5rem 1rem;
+		background: #dc2626;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		margin-top: 1rem;
+	}
+
+	button:hover { background: #b91c1c; }
+
+	a {
+		color: #1a56db;
+		text-decoration: underline;
+	}
+</style>

@@ -16,7 +16,11 @@ const { title } = Astro.props;
 	<body>
 		<header>
 			<nav>
-				<a href="/">Procomeka</a>
+				<a href="/" class="brand">Procomeka</a>
+				<div class="nav-links">
+					<a href="/login">Iniciar sesión</a>
+					<a href="/dashboard">Panel</a>
+				</div>
 			</nav>
 		</header>
 		<main>
@@ -27,3 +31,67 @@ const { title } = Astro.props;
 		</footer>
 	</body>
 </html>
+
+<style is:global>
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
+
+	body {
+		font-family: system-ui, -apple-system, sans-serif;
+		line-height: 1.6;
+		color: #1f2937;
+	}
+
+	header {
+		border-bottom: 1px solid #e5e7eb;
+		padding: 0.75rem 1.5rem;
+	}
+
+	nav {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		max-width: 960px;
+		margin: 0 auto;
+	}
+
+	.brand {
+		font-weight: 700;
+		font-size: 1.1rem;
+		text-decoration: none;
+		color: #1f2937;
+	}
+
+	.nav-links {
+		display: flex;
+		gap: 1rem;
+	}
+
+	.nav-links a {
+		color: #4b5563;
+		text-decoration: none;
+		font-size: 0.9rem;
+	}
+
+	.nav-links a:hover {
+		color: #1a56db;
+	}
+
+	main {
+		max-width: 960px;
+		margin: 0 auto;
+		padding: 1.5rem;
+	}
+
+	footer {
+		border-top: 1px solid #e5e7eb;
+		padding: 1rem 1.5rem;
+		text-align: center;
+		color: #6b7280;
+		font-size: 0.85rem;
+		margin-top: 3rem;
+	}
+</style>

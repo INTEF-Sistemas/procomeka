@@ -1,4 +1,4 @@
-.PHONY: deps up clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage
+.PHONY: deps up down clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage cli seed
 
 # Variables
 BUN = bun
@@ -10,8 +10,13 @@ deps:
 	$(BUN) install
 	$(BUN) x playwright install --with-deps
 
-up:
+up: deps seed
 	$(BUN) run dev
+
+down:
+	-@lsof -ti:3000 | xargs kill 2>/dev/null
+	-@lsof -ti:4321 | xargs kill 2>/dev/null
+	@echo "Servicios detenidos"
 
 up-api:
 	$(BUN) run dev:api
@@ -20,12 +25,12 @@ up-frontend:
 	$(BUN) run dev:frontend
 
 clean:
-	rm -rf node_modules
 	rm -rf .coverage
 	rm -rf dist
 	rm -rf build
 	rm -rf playwright-report
 	rm -rf test-results
+	rm -f local.db
 	find . -name "*.log" -type f -delete
 
 format:
@@ -59,3 +64,9 @@ test-e2e-postgres:
 
 check-coverage:
 	$(BUN) run check-coverage
+
+cli:
+	$(BUN) run --filter '@procomeka/cli' cli -- $(ARGS)
+
+seed:
+	$(BUN) run --filter '@procomeka/cli' cli -- seed

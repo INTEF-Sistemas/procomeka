@@ -9,7 +9,8 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"hono": "^4.7.0",
-		"@procomeka/db": "workspace:*"
+		"@procomeka/db": "workspace:*",
+		"better-auth": "^1.5.6",
+		"hono": "^4.7.0"
 	}
 }

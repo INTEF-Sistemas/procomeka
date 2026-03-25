@@ -1,3 +1,3 @@
-export * from "./users.ts";
+export * from "./auth.ts";
 export * from "./resources.ts";
 export * from "./collections.ts";

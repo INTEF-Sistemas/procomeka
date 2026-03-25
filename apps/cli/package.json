@@ -1,0 +1,13 @@
+{
+	"name": "@procomeka/cli",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"cli": "bun run src/index.ts",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"better-auth": "^1.5.0"
+	}
+}
