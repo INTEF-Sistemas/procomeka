@@ -4,6 +4,7 @@ import { auth } from "./auth/config.ts";
 import { type AuthEnv, sessionMiddleware } from "./auth/middleware.ts";
 import { publicRoutes } from "./routes/public.ts";
 import { adminRoutes } from "./routes/admin.ts";
+import { mockOidc } from "./routes/mock-oidc.ts";
 
 const app = new Hono<AuthEnv>();
 
@@ -24,6 +25,10 @@ app.use("/api/admin/*", sessionMiddleware);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 
+app.get("/api/v1/config", (c) =>
+	c.json({ oidcEnabled: process.env.OIDC_ENABLED === "true" }),
+);
+
 app.get("/", (c) =>
 	c.json({
 		name: "Procomeka API",
@@ -33,6 +38,11 @@ app.get("/", (c) =>
 
 app.route("/api/v1", publicRoutes);
 app.route("/api/admin", adminRoutes);
+
+// Mock OIDC provider para desarrollo (solo si no hay IdP externo)
+if (!process.env.DATABASE_URL) {
+	app.route("/mock-oidc", mockOidc);
+}
 
 export default {
 	port: Number(process.env.PORT ?? 3000),
