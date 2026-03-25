@@ -1,4 +1,4 @@
-.PHONY: deps up down clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage cli seed
+.PHONY: deps up down clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage cli seed build-preview up-static
 
 # Variables
 BUN = bun
@@ -8,7 +8,6 @@ all: up
 
 deps:
 	$(BUN) install
-	$(BUN) x playwright install --with-deps
 
 up: deps seed
 	$(BUN) run dev
@@ -24,13 +23,26 @@ up-api:
 up-frontend:
 	$(BUN) run dev:frontend
 
+# Preview estático: construye y sirve localmente como lo haría GitHub Pages
+build-preview:
+	cd apps/frontend && PREVIEW_STATIC=true PREVIEW_BASE=/procomeka/ $(BUN) run build:preview
+	@# Crear estructura de subpath para servir localmente
+	@rm -rf apps/frontend/.preview-serve
+	@mkdir -p apps/frontend/.preview-serve/procomeka
+	@cp -r apps/frontend/dist/* apps/frontend/.preview-serve/procomeka/
+
+up-static: build-preview
+	@echo "Sirviendo preview estático en http://localhost:8080/procomeka/"
+	@cd apps/frontend/.preview-serve && python3 -m http.server 8080
+
 clean:
 	rm -rf .coverage
 	rm -rf dist
 	rm -rf build
 	rm -rf playwright-report
 	rm -rf test-results
-	rm -f local.db
+	rm -rf local-data
+	rm -rf apps/frontend/.preview-serve
 	find . -name "*.log" -type f -delete
 
 format:

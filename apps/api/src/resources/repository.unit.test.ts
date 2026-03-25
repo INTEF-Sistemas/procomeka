@@ -1,0 +1,106 @@
+import { expect, test, describe } from "bun:test";
+import {
+	listResources,
+	getResourceById,
+	getResourceBySlug,
+	createResource,
+	updateResource,
+	deleteResource,
+	updateEditorialStatus,
+} from "./repository.ts";
+
+const baseResource = {
+	title: "Recurso test repo",
+	description: "Descripción completa del recurso para testing",
+	language: "es",
+	license: "cc-by",
+	resourceType: "documento",
+};
+
+describe("Repository — CRUD completo", () => {
+	let createdId: string;
+	let createdSlug: string;
+
+	test("createResource → devuelve id y slug", async () => {
+		const result = await createResource(baseResource);
+		expect(result.id).toBeDefined();
+		expect(result.slug).toContain("recurso-test-repo");
+		createdId = result.id;
+		createdSlug = result.slug;
+	});
+
+	test("createResource con subjects y levels", async () => {
+		const result = await createResource({
+			...baseResource,
+			title: "Recurso con materias",
+			subjects: ["matematicas", "informatica"],
+			levels: ["educacion-primaria"],
+		});
+		expect(result.id).toBeDefined();
+
+		const resource = await getResourceById(result.id);
+		expect(resource).not.toBeNull();
+		expect(resource!.subjects).toContain("matematicas");
+		expect(resource!.subjects).toContain("informatica");
+		expect(resource!.levels).toContain("educacion-primaria");
+	});
+
+	test("getResourceById → recurso existente", async () => {
+		const resource = await getResourceById(createdId);
+		expect(resource).not.toBeNull();
+		expect(resource!.title).toBe(baseResource.title);
+		expect(resource!.subjects).toEqual([]);
+		expect(resource!.levels).toEqual([]);
+	});
+
+	test("getResourceById → null para id inexistente", async () => {
+		const resource = await getResourceById("no-existe");
+		expect(resource).toBeNull();
+	});
+
+	test("getResourceBySlug → recurso existente", async () => {
+		const resource = await getResourceBySlug(createdSlug);
+		expect(resource).not.toBeNull();
+		expect(resource!.id).toBe(createdId);
+		expect(resource!.subjects).toEqual([]);
+	});
+
+	test("getResourceBySlug → null para slug inexistente", async () => {
+		const resource = await getResourceBySlug("slug-que-no-existe");
+		expect(resource).toBeNull();
+	});
+
+	test("listResources → lista con resultados", async () => {
+		const result = await listResources({});
+		expect(result.data.length).toBeGreaterThan(0);
+		expect(typeof result.total).toBe("number");
+	});
+
+	test("listResources con búsqueda", async () => {
+		const result = await listResources({ search: "test repo" });
+		expect(result.data.length).toBeGreaterThan(0);
+	});
+
+	test("listResources con status", async () => {
+		const result = await listResources({ status: "draft" });
+		expect(Array.isArray(result.data)).toBe(true);
+	});
+
+	test("updateResource → actualiza campos", async () => {
+		await updateResource(createdId, { title: "Título actualizado repo" });
+		const resource = await getResourceById(createdId);
+		expect(resource!.title).toBe("Título actualizado repo");
+	});
+
+	test("updateEditorialStatus → cambia estado", async () => {
+		await updateEditorialStatus(createdId, "published", "1");
+		const resource = await getResourceById(createdId);
+		expect(resource!.editorialStatus).toBe("published");
+	});
+
+	test("deleteResource → soft delete", async () => {
+		await deleteResource(createdId);
+		const resource = await getResourceById(createdId);
+		expect(resource).toBeNull();
+	});
+});

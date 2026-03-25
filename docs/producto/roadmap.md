@@ -30,7 +30,7 @@ Base técnica y documental completada. API, auth y frontend editorial mínimo ya
 | Épica | Estado |
 |-------|--------|
 | Modelo de metadatos mínimo | No iniciada |
-| Arquitectura base del sistema | Completado — monorepo, Hono, Astro, Drizzle, SQLite dev |
+| Arquitectura base del sistema | Completado — monorepo, Hono, Astro, Drizzle, PGlite dev |
 | Autenticación y autorización | Completado — Better Auth (password + OIDC), RBAC, CLI usuarios, login/dashboard |
 | Flujo editorial de recursos | No iniciada |
 | Búsqueda y facetas iniciales | No iniciada |

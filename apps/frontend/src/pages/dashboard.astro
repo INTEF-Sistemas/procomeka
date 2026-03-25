@@ -8,7 +8,7 @@ import Base from "../layouts/Base.astro";
 
 		<div id="not-authenticated" style="display:none;">
 			<p>No has iniciado sesión.</p>
-			<a href="/login">Iniciar sesión</a>
+			<a id="login-link" href="#">Iniciar sesión</a>
 		</div>
 
 		<div id="authenticated" style="display:none;">
@@ -30,7 +30,7 @@ import Base from "../layouts/Base.astro";
 
 			<div id="author-section" class="section" style="display:none;">
 				<h2>Mis recursos</h2>
-				<a href="/admin/recursos/nuevo" class="btn-create">Crear recurso</a>
+				<a id="create-link" href="#" class="btn-create">Crear recurso</a>
 				<div id="resources-list">
 					<p class="loading-text">Cargando recursos...</p>
 				</div>
@@ -42,6 +42,9 @@ import Base from "../layouts/Base.astro";
 </Base>
 
 <script>
+	import { getApiClient } from "../lib/get-api-client.ts";
+	import { url } from "../lib/paths.ts";
+
 	const STATUS_LABELS: Record<string, string> = {
 		draft: "Borrador",
 		review: "En revisión",
@@ -49,31 +52,34 @@ import Base from "../layouts/Base.astro";
 		archived: "Archivado",
 	};
 
+	// Configurar hrefs con base path
+	const loginLink = document.getElementById("login-link") as HTMLAnchorElement;
+	const createLink = document.getElementById("create-link") as HTMLAnchorElement;
+	if (loginLink) loginLink.href = url("login");
+	if (createLink) createLink.href = url("admin/recursos/nuevo");
+
 	async function loadResources() {
 		const container = document.getElementById("resources-list") as HTMLDivElement;
 		try {
-			const res = await fetch("/api/admin/resources", { credentials: "include" });
-			if (!res.ok) {
-				container.innerHTML = "<p>Error al cargar recursos.</p>";
-				return;
-			}
-			const { data } = await res.json();
+			const api = await getApiClient();
+			const { data } = await api.listAdminResources();
+
 			if (!data || data.length === 0) {
 				container.innerHTML = "<p>No hay recursos todavía.</p>";
 				return;
 			}
 
-			const rows = data.map((r: Record<string, string>) => {
-				const status = r.editorial_status ?? r.editorialStatus ?? "draft";
+			const rows = data.map((r) => {
+				const status = r.editorialStatus ?? "draft";
 				const label = STATUS_LABELS[status] ?? status;
-				const date = r.created_at ?? r.createdAt ?? "";
+				const date = r.createdAt;
 				const dateStr = date ? new Date(typeof date === "number" ? date * 1000 : date).toLocaleDateString("es-ES") : "";
 				return `<tr>
 					<td>${r.title}</td>
 					<td><span class="badge badge-${status}">${label}</span></td>
 					<td>${dateStr}</td>
 					<td class="actions">
-						<a href="/admin/recursos/editar?id=${r.id}" class="action-link">Editar</a>
+						<a href="${url(`admin/recursos/editar?id=${r.id}`)}" class="action-link">Editar</a>
 						<button class="action-delete" data-id="${r.id}">Eliminar</button>
 					</td>
 				</tr>`;
@@ -87,12 +93,10 @@ import Base from "../layouts/Base.astro";
 			container.querySelectorAll(".action-delete").forEach((btn) => {
 				btn.addEventListener("click", async () => {
 					const id = (btn as HTMLButtonElement).dataset.id;
-					if (!confirm("¿Eliminar este recurso?")) return;
-					const delRes = await fetch(`/api/admin/resources/${id}`, {
-						method: "DELETE",
-						credentials: "include",
-					});
-					if (delRes.ok) loadResources();
+					if (!id || !confirm("¿Eliminar este recurso?")) return;
+					const api = await getApiClient();
+					await api.deleteResource(id);
+					loadResources();
 				});
 			});
 		} catch {
@@ -106,24 +110,16 @@ import Base from "../layouts/Base.astro";
 		const auth = document.getElementById("authenticated") as HTMLDivElement;
 
 		try {
-			const res = await fetch("/api/auth/get-session", {
-				credentials: "include",
-			});
+			const api = await getApiClient();
+			const session = await api.getSession();
 
-			if (!res.ok) {
+			if (!session?.user) {
 				loading.style.display = "none";
 				notAuth.style.display = "block";
 				return;
 			}
 
-			const data = await res.json();
-			if (!data?.user) {
-				loading.style.display = "none";
-				notAuth.style.display = "block";
-				return;
-			}
-
-			const user = data.user;
+			const user = session.user;
 			(document.getElementById("user-name") as HTMLSpanElement).textContent = user.name;
 			(document.getElementById("user-email") as HTMLSpanElement).textContent = user.email;
 
@@ -155,22 +151,19 @@ import Base from "../layouts/Base.astro";
 	}
 
 	document.getElementById("logout-btn")?.addEventListener("click", async () => {
-		await fetch("/api/auth/sign-out", {
-			method: "POST",
-			credentials: "include",
-		});
+		const api = await getApiClient();
+		await api.signOut();
 
 		try {
-			const configRes = await fetch("/api/v1/config");
-			const config = await configRes.json();
+			const config = await api.getConfig();
 			if (config.oidcEnabled && config.oidcEndSessionUrl) {
-				const returnUrl = `${window.location.origin}/login`;
+				const returnUrl = `${window.location.origin}${url("login")}`;
 				window.location.href = `${config.oidcEndSessionUrl}?post_logout_redirect_uri=${encodeURIComponent(returnUrl)}`;
 				return;
 			}
-		} catch { /* si falla, logout local es suficiente */ }
+		} catch { /* logout local es suficiente */ }
 
-		window.location.href = "/login";
+		window.location.href = url("login");
 	});
 
 	loadSession();

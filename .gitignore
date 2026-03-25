@@ -15,8 +15,11 @@ logs
 _.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
-# SQLite local dev database
-local.db
+# PGlite local dev database
+local-data/
+
+# Preview serve directory
+.preview-serve
 
 # dotenv environment variable files
 .env

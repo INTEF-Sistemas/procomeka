@@ -9,6 +9,9 @@ import Base from "../layouts/Base.astro";
 </Base>
 
 <script>
+	import { getApiClient } from "../lib/get-api-client.ts";
+	import { url } from "../lib/paths.ts";
+
 	const STATUS_LABELS: Record<string, string> = {
 		draft: "Borrador",
 		review: "En revisión",
@@ -22,25 +25,26 @@ import Base from "../layouts/Base.astro";
 
 	async function loadResource() {
 		if (!slug) {
-			container.innerHTML = "<p>No se especificó un recurso.</p><a href='/'>Volver al inicio</a>";
+			container.innerHTML = `<p>No se especificó un recurso.</p><a href='${url("")}'>Volver al inicio</a>`;
 			return;
 		}
 
 		try {
-			const res = await fetch(`/api/v1/resources/${slug}`);
-			if (!res.ok) {
-				container.innerHTML = "<p>Recurso no encontrado.</p><a href='/'>Volver al inicio</a>";
+			const api = await getApiClient();
+			const r = await api.getResourceBySlug(slug);
+
+			if (!r) {
+				container.innerHTML = `<p>Recurso no encontrado.</p><a href='${url("")}'>Volver al inicio</a>`;
 				return;
 			}
 
-			const r = await res.json();
-			const status = r.editorial_status ?? r.editorialStatus ?? "draft";
+			const status = r.editorialStatus ?? "draft";
 			const statusLabel = STATUS_LABELS[status] ?? status;
 			container.innerHTML = `
-				<nav class="breadcrumb"><a href="/">Recursos</a> / ${r.title}</nav>
+				<nav class="breadcrumb"><a href="${url("")}">Recursos</a> / ${r.title}</nav>
 				<h1>${r.title}</h1>
 				<div class="meta">
-					<span class="badge">${r.resource_type ?? r.resourceType}</span>
+					<span class="badge">${r.resourceType}</span>
 					<span class="badge badge-${status}">${statusLabel}</span>
 					<span>${r.language}</span>
 					<span>${r.license}</span>

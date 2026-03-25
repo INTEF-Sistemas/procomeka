@@ -1,0 +1,91 @@
+/**
+ * Datos de demostración compartidos.
+ * Usados por: CLI seed, preview browser, seed.json.
+ */
+export const DEV_USERS = [
+	{ id: "demo-admin", email: "admin@example.com", name: "Admin", role: "admin", password: "password" },
+	{ id: "demo-curator", email: "curator@example.com", name: "Curator", role: "curator", password: "password" },
+	{ id: "demo-author", email: "author@example.com", name: "Author", role: "author", password: "password" },
+	{ id: "demo-reader", email: "reader@example.com", name: "Reader", role: "reader", password: "password" },
+] as const;
+
+export const DEV_RESOURCES = [
+	{
+		id: "res-1",
+		slug: "introduccion-programacion-scratch",
+		title: "Introducción a la programación con Scratch",
+		description: "Guía didáctica para iniciar al alumnado de primaria en el pensamiento computacional mediante Scratch.",
+		language: "es",
+		license: "cc-by-sa",
+		resourceType: "secuencia-didactica",
+		keywords: "scratch,programación,pensamiento computacional",
+		author: "María García López",
+		publisher: null,
+		editorialStatus: "published",
+		subjects: ["informatica", "matematicas"],
+		levels: ["educacion-primaria"],
+	},
+	{
+		id: "res-2",
+		slug: "cambio-climatico-secundaria",
+		title: "El cambio climático: causas y consecuencias",
+		description: "Unidad didáctica sobre cambio climático para ESO con actividades interactivas y evaluación.",
+		language: "es",
+		license: "cc-by",
+		resourceType: "actividad-interactiva",
+		keywords: "cambio climático,medio ambiente,sostenibilidad",
+		author: "Carlos Ruiz Martín",
+		publisher: null,
+		editorialStatus: "published",
+		subjects: ["ciencias-naturales", "geografia"],
+		levels: ["educacion-secundaria-obligatoria"],
+	},
+	{
+		id: "res-3",
+		slug: "fracciones-visuales",
+		title: "Fracciones visuales: aprende jugando",
+		description: "Colección de ejercicios interactivos para comprender fracciones de forma visual.",
+		language: "es",
+		license: "cc-by-nc-sa",
+		resourceType: "ejercicio",
+		keywords: "fracciones,matemáticas,visual",
+		author: "Ana Fernández Díaz",
+		publisher: null,
+		editorialStatus: "published",
+		subjects: ["matematicas"],
+		levels: ["educacion-primaria", "educacion-secundaria-obligatoria"],
+	},
+	{
+		id: "res-4",
+		slug: "shakespeare-teatro-aula",
+		title: "Shakespeare en el aula: teatro y literatura",
+		description: "Propuesta didáctica para trabajar obras de Shakespeare mediante representación teatral.",
+		language: "es",
+		license: "cc-by-sa",
+		resourceType: "proyecto",
+		keywords: "shakespeare,teatro,literatura,inglés",
+		author: "Pedro Sánchez Vega",
+		publisher: null,
+		editorialStatus: "draft",
+		subjects: ["lengua-extranjera", "literatura"],
+		levels: ["bachillerato"],
+	},
+	{
+		id: "res-5",
+		slug: "seguridad-internet-menores",
+		title: "Seguridad en internet para menores",
+		description: "Vídeo educativo sobre navegación segura, privacidad y ciberacoso dirigido a familias y docentes.",
+		language: "es",
+		license: "cc-by",
+		resourceType: "video",
+		keywords: "seguridad,internet,ciberacoso,privacidad",
+		author: "Instituto Nacional de Ciberseguridad",
+		publisher: "INCIBE",
+		editorialStatus: "published",
+		subjects: ["informatica", "educacion-civica"],
+		levels: ["educacion-primaria", "educacion-secundaria-obligatoria"],
+	},
+] as const;
+
+export type SeedUser = (typeof DEV_USERS)[number];
+export type SeedResource = (typeof DEV_RESOURCES)[number];

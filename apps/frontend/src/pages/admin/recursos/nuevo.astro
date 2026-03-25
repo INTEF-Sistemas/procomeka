@@ -7,7 +7,7 @@ import Base from "../../../layouts/Base.astro";
 		<h1>Crear recurso</h1>
 
 		<div id="auth-check" style="display:none;">
-			<p>Necesitas <a href="/login">iniciar sesión</a> como autor o superior para crear recursos.</p>
+			<p>Necesitas <a id="login-link" href="#">iniciar sesión</a> como autor o superior para crear recursos.</p>
 		</div>
 
 		<div id="error-message" class="error" role="alert" aria-live="polite" style="display:none;"></div>
@@ -87,10 +87,17 @@ import Base from "../../../layouts/Base.astro";
 </Base>
 
 <script>
+	import { getApiClient } from "../../../lib/get-api-client.ts";
+	import { url } from "../../../lib/paths.ts";
+
 	const form = document.getElementById("resource-form") as HTMLFormElement;
 	const authCheck = document.getElementById("auth-check") as HTMLDivElement;
 	const errorDiv = document.getElementById("error-message") as HTMLDivElement;
 	const successDiv = document.getElementById("success-message") as HTMLDivElement;
+
+	// Configurar enlaces con base path
+	const loginLink = document.getElementById("login-link") as HTMLAnchorElement;
+	if (loginLink) loginLink.href = url("login");
 
 	function clearFieldErrors() {
 		form.querySelectorAll(".field-error").forEach((el) => { el.textContent = ""; });
@@ -108,12 +115,11 @@ import Base from "../../../layouts/Base.astro";
 
 	async function checkAuth() {
 		try {
-			const res = await fetch("/api/auth/get-session", { credentials: "include" });
-			if (!res.ok) { authCheck.style.display = "block"; return; }
-			const data = await res.json();
-			if (!data?.user) { authCheck.style.display = "block"; return; }
+			const api = await getApiClient();
+			const session = await api.getSession();
+			if (!session?.user) { authCheck.style.display = "block"; return; }
 
-			const role = data.user.role ?? "reader";
+			const role = session.user.role ?? "reader";
 			const hierarchy = ["reader", "author", "curator", "admin"];
 			if (hierarchy.indexOf(role) < 1) {
 				authCheck.style.display = "block";
@@ -142,28 +148,17 @@ import Base from "../../../layouts/Base.astro";
 		};
 
 		try {
-			const res = await fetch("/api/admin/resources", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify(body),
-			});
-
-			if (res.ok) {
-				const data = await res.json();
-				successDiv.innerHTML = `Recurso creado. <a href="/recurso?slug=${data.slug}">Ver recurso</a>`;
-				successDiv.style.display = "block";
-				form.reset();
-			} else {
-				const data = await res.json().catch(() => null);
-				if (data?.details) {
-					showFieldErrors(data.details);
-				}
-				errorDiv.textContent = data?.error ?? "Error al crear el recurso";
-				errorDiv.style.display = "block";
+			const api = await getApiClient();
+			const data = await api.createResource(body);
+			successDiv.innerHTML = `Recurso creado. <a href="${url(`recurso?slug=${data.slug}`)}">Ver recurso</a>`;
+			successDiv.style.display = "block";
+			form.reset();
+		} catch (err: unknown) {
+			const e = err as { details?: { field: string; message: string }[]; error?: string };
+			if (e?.details) {
+				showFieldErrors(e.details);
 			}
-		} catch {
-			errorDiv.textContent = "Error de conexión";
+			errorDiv.textContent = e?.error ?? "Error al crear el recurso";
 			errorDiv.style.display = "block";
 		}
 	});

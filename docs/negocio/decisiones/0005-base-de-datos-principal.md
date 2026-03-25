@@ -15,7 +15,7 @@ La plataforma debe soportar catalogación, trazabilidad editorial, interoperabil
 - coste operativo razonable,
 - bajo lock-in técnico.
 
-Restricción obligatoria: **SQLite debe mantenerse en entornos de test rápido GUI/UX en cada PR (preview estático en navegador)**. Por tanto, la decisión de base de datos principal debe contemplar explícitamente convivencia con SQLite para preview.
+Restricción obligatoria: **debe existir un entorno de test rápido GUI/UX en cada PR (preview estático en navegador)**. Originalmente se contemplaba SQLite para este fin, pero ADR-0010 resolvió esto con PGlite (PostgreSQL compilado a WASM), eliminando la necesidad de mantener esquemas duales.
 
 ## Opciones Consideradas
 
@@ -71,7 +71,7 @@ Restricción obligatoria: **SQLite debe mantenerse en entornos de test rápido G
 
 ## Decisión
 
-Se adopta **PostgreSQL como base de datos principal** para producción y entornos persistentes (staging/preproducción), manteniendo **SQLite obligatoriamente para previews y tests rápidos de GUI/UX en cada PR**.
+Se adopta **PostgreSQL como base de datos principal** para producción y entornos persistentes (staging/preproducción). Para desarrollo local y previews de PR se usa **PGlite** (PostgreSQL compilado a WASM), eliminando la necesidad de esquemas SQLite separados (ver ADR-0010).
 
 Motivos principales:
 
@@ -106,10 +106,10 @@ Motivos principales:
 
 ## Notas de Implementación
 
-1. **Estrategia por entorno**
+1. **Estrategia por entorno** (actualizado por ADR-0010)
    - Producción/staging: PostgreSQL.
-   - CI de previews GUI/UX por PR: SQLite.
-   - Desarrollo local: perfil dual configurable (SQLite por defecto para velocidad + opción PostgreSQL para validación de integración).
+   - Preview estático por PR: PGlite WASM en navegador (GitHub Pages).
+   - Desarrollo local: PGlite (file-backed, sin instalar PostgreSQL).
 
 2. **Capa de acceso a datos (Bun + TypeScript strict)**
    - Adoptar un ORM/query builder con soporte explícito para PostgreSQL y SQLite.

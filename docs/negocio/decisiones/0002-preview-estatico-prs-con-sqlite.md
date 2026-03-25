@@ -1,6 +1,6 @@
 # ADR-0002 Preview estático de PRs con frontend en Cloudflare Pages y SQLite en navegador
 
-* Estado: Aceptado
+* Estado: Supersedido por [ADR-0010](0010-preview-estatico-pglite-github-pages.md)
 * Fecha: 2024-03-24
 * Agentes Implicados: [@.agents/skills/evaluacion-tecnologica/SKILL.md, @.agents/skills/frontend-ux-accesibilidad/SKILL.md, @.agents/skills/qa-validacion/SKILL.md]
 

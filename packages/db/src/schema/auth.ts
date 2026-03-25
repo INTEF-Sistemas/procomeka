@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, varchar, boolean } from "drizzle-orm/pg-core";
 
 /**
  * Tablas de autenticación alineadas con Better Auth.
@@ -8,12 +8,12 @@ import { pgTable, text, timestamp, varchar, integer } from "drizzle-orm/pg-core"
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
 	email: varchar("email", { length: 255 }).notNull().unique(),
-	emailVerified: integer("email_verified").notNull().default(0),
+	emailVerified: boolean("email_verified").notNull().default(false),
 	name: text("name"),
 	image: text("image"),
 	role: varchar("role", { length: 50 }).notNull().default("reader"),
-	isActive: integer("is_active").notNull().default(1),
-	banned: integer("banned").default(0),
+	isActive: boolean("is_active").notNull().default(true),
+	banned: boolean("banned").default(false),
 	banReason: text("ban_reason"),
 	banExpires: timestamp("ban_expires"),
 	createdAt: timestamp("created_at").notNull().defaultNow(),

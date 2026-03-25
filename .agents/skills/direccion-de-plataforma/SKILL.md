@@ -29,7 +29,7 @@ Decidir cómo se distribuye la responsabilidad entre capas del sistema y qué so
 | Frontend público | Next.js, Nuxt, Remix, Astro |
 | Backend / API | Hono + Bun, Elysia, Fastify |
 | Gestión de contenido | Payload CMS, Directus, Strapi, custom |
-| Base de datos | PostgreSQL, SQLite (Turso), MySQL |
+| Base de datos | PostgreSQL (prod), PGlite (dev/preview) |
 | Búsqueda | Base de datos principal (FTS nativo) |
 | Autenticación | Better Auth, Lucia, Auth.js, Clerk |
 | Almacenamiento | Disco local o volumen montado |

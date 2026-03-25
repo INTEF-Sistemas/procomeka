@@ -63,18 +63,46 @@ El sistema se organiza en capas desacopladas con contratos explícitos entre ell
 │              Capa de datos                   │
 │   Drizzle ORM (ADR-0006)                     │
 │   packages/db/                               │
+│   Esquema pgTable unificado                  │
+│   Repositorio compartido (API + preview)     │
 └────────┬──────────────────┬─────────────────┘
          │                  │
 ┌────────▼────────┐ ┌───────▼─────────────────┐
 │  PostgreSQL     │ │  Sistema de Archivos     │
 │  (ADR-0005)     │ │  Local / Volumen montado │
-│  prod/staging   │ └─────────────────────────┘
+│  producción     │ └─────────────────────────┘
 ├─────────────────┤
-│  SQLite         │
-│  (ADR-0002)     │
-│  preview/tests  │
+│  PGlite         │
+│  (ADR-0010)     │
+│  dev local +    │
+│  preview PRs    │
 └─────────────────┘
 ```
+
+## Modos de ejecución
+
+| Modo | Base de datos | Auth | Despliegue |
+|------|---------------|------|------------|
+| **Producción** | PostgreSQL (`DATABASE_URL`) | Better Auth | Servidor |
+| **Desarrollo local** | PGlite (file-backed en `local-data/`) | Better Auth | `make up` |
+| **Preview estático** | PGlite WASM (IndexedDB en navegador) | Usuarios demo | GitHub Pages |
+
+### Preview estático de PRs
+
+Cada Pull Request publica automáticamente un preview en GitHub Pages. El preview:
+
+- Se construye como sitio estático con Astro (`PREVIEW_STATIC=true`)
+- Usa PGlite compilado a WASM para ejecutar PostgreSQL en el navegador
+- Carga datos de demostración desde `apps/frontend/public/preview/seed.json`
+- Incluye un banner con selector de rol y botón de reset de datos
+- Se publica en `https://intef-proyectos.github.io/procomeka/pr-preview/pr-{N}/`
+- La rama `main` se publica en `https://intef-proyectos.github.io/procomeka/`
+
+El frontend usa una abstracción `ApiClient` con dos implementaciones:
+- `HttpApiClient`: llama al servidor API real (modo normal)
+- `PreviewApiClient`: ejecuta queries directamente en PGlite del navegador (modo preview)
+
+Ambos comparten el mismo esquema Drizzle (`pgTable`) y el mismo repositorio de queries (`packages/db/src/repository.ts`).
 
 ## Estructura del monorepo
 
@@ -82,10 +110,10 @@ El sistema se organiza en capas desacopladas con contratos explícitos entre ell
 procomeka/
 ├── apps/
 │   ├── api/          # Servidor API — Hono + Better Auth
-│   ├── cli/          # CLI de gestión (usuarios, migraciones)
-│   └── frontend/     # Frontend público — Astro
+│   ├── cli/          # CLI de gestión (usuarios, seed, migraciones)
+│   └── frontend/     # Frontend público — Astro + preview estático
 ├── packages/
-│   └── db/           # Esquema, migraciones, acceso a datos — Drizzle ORM
+│   └── db/           # Esquema, repositorio, validación, setup, seed — Drizzle ORM
 ├── docs/             # Documentación del proyecto
 ├── e2e/              # Tests end-to-end — Playwright
 └── package.json      # Bun workspaces raíz
@@ -103,25 +131,29 @@ procomeka/
 
 ### CLI — `apps/cli/`
 - Herramienta de gestión desde terminal
-- Comandos: `user:create`, `user:list`
-- Usa Drizzle directamente contra PostgreSQL
+- Comandos: `seed`, `user:create`, `user:list`
+- Usa PGlite directamente para desarrollo local
 
 ### Frontend público — `apps/frontend/`
 - Framework: **Astro** (ADR-0004)
 - Interfaz pública para profesorado y ciudadanía
 - Búsqueda, fichas de recurso, colecciones, descarga
 - Arquitectura de islas: mínimo JS en cliente, componentes interactivos solo donde aporten valor
+- Modo preview: PGlite WASM en navegador con datos de demostración
 
 ### Capa de datos — `packages/db/`
 - ORM: **Drizzle** (ADR-0006)
-- Esquema TypeScript que define tablas, relaciones y tipos inferidos
+- Esquema TypeScript unificado (`pgTable`) que funciona con PostgreSQL y PGlite
+- Repositorio de queries compartido entre API y preview del frontend
+- Validación de datos compartida
 - Migraciones versionadas en SQL plano (`drizzle-kit`)
-- Configuración dual: PostgreSQL (producción) / SQLite (preview/tests)
+- Setup de tablas reutilizable para todos los entornos
 
-### Base de datos — PostgreSQL (ADR-0005)
-- Almacenamiento principal de recursos, metadatos y usuarios
-- Índice de búsqueda (FTS nativo de PostgreSQL)
-- SQLite para previews estáticos en PRs (ADR-0002)
+### Base de datos — PostgreSQL / PGlite (ADR-0005, ADR-0010)
+- **Producción**: PostgreSQL real
+- **Desarrollo local**: PGlite (PostgreSQL embebido, sin instalar nada)
+- **Preview en navegador**: PGlite WASM (PostgreSQL compilado a WebAssembly)
+- Un solo esquema `pgTable` en todos los entornos — sin duplicación
 
 ### Sistema de Archivos
 - Almacenamiento directo en disco físico de los archivos subidos, metadatos voluminosos en crudo o multimedia.
@@ -135,15 +167,17 @@ procomeka/
 4. **Tareas de ingestión idempotentes**: toda importación puede reejecutarse sin efectos no deseados
 5. **Observabilidad desde el inicio**: logs estructurados, métricas, trazas en todas las capas
 6. **Accesibilidad como requisito**: no como añadido posterior
-7. **Entorno estático funcional por PR**: Capacidad de generar una versión estática de la plataforma (usando SQLite) para probar el sistema desde el navegador en cada Pull Request de forma ligera, sin despliegues de backend.
+7. **Un solo esquema, múltiples entornos**: el mismo esquema PostgreSQL (`pgTable` de Drizzle) funciona en producción, desarrollo local y preview en navegador gracias a PGlite
+8. **Preview funcional por PR**: versión estática con PGlite WASM para probar el sistema desde el navegador en cada Pull Request, sin despliegues de backend (ADR-0010)
 
 ## ADRs relacionadas
 
 - [ADR-0001](../negocio/decisiones/0001-typescript-bun-como-stack-base.md): TypeScript + Bun como stack base
-- [ADR-0002](../negocio/decisiones/0002-preview-estatico-prs-con-sqlite.md): Preview estático de PRs con SQLite
+- [ADR-0002](../negocio/decisiones/0002-preview-estatico-prs-con-sqlite.md): Preview estático de PRs con SQLite (**supersedido por ADR-0010**)
 - [ADR-0003](../negocio/decisiones/0003-framework-http-api.md): Framework HTTP para API — Hono
 - [ADR-0004](../negocio/decisiones/0004-framework-frontend.md): Framework frontend — Astro
 - [ADR-0005](../negocio/decisiones/0005-base-de-datos-principal.md): Base de datos principal — PostgreSQL
 - [ADR-0006](../negocio/decisiones/0006-orm-y-capa-acceso-datos.md): ORM y capa de acceso a datos — Drizzle
 - [ADR-0007](../negocio/decisiones/0007-autenticacion-y-sesiones.md): Autenticación y sesiones — Better Auth
 - [ADR-0008](../negocio/decisiones/0008-modelo-de-autorizacion.md): Modelo de autorización — RBAC
+- [ADR-0010](../negocio/decisiones/0010-preview-estatico-pglite-github-pages.md): Preview estático con PGlite + GitHub Pages

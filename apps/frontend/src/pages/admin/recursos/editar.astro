@@ -7,12 +7,12 @@ import Base from "../../../layouts/Base.astro";
 		<h1>Editar recurso</h1>
 
 		<div id="auth-check" style="display:none;">
-			<p>Necesitas <a href="/login">iniciar sesión</a> como autor o superior para editar recursos.</p>
+			<p>Necesitas <a id="login-link" href="#">iniciar sesión</a> como autor o superior para editar recursos.</p>
 		</div>
 
 		<div id="not-found" style="display:none;">
 			<p>Recurso no encontrado.</p>
-			<a href="/dashboard">Volver al panel</a>
+			<a id="dashboard-link" href="#">Volver al panel</a>
 		</div>
 
 		<div id="loading">Cargando recurso...</div>
@@ -94,12 +94,21 @@ import Base from "../../../layouts/Base.astro";
 </Base>
 
 <script>
+	import { getApiClient } from "../../../lib/get-api-client.ts";
+	import { url } from "../../../lib/paths.ts";
+
 	const form = document.getElementById("resource-form") as HTMLFormElement;
 	const authCheck = document.getElementById("auth-check") as HTMLDivElement;
 	const notFound = document.getElementById("not-found") as HTMLDivElement;
 	const loadingDiv = document.getElementById("loading") as HTMLDivElement;
 	const errorDiv = document.getElementById("error-message") as HTMLDivElement;
 	const successDiv = document.getElementById("success-message") as HTMLDivElement;
+
+	// Configurar enlaces con base path
+	const loginLink = document.getElementById("login-link") as HTMLAnchorElement;
+	const dashboardLink = document.getElementById("dashboard-link") as HTMLAnchorElement;
+	if (loginLink) loginLink.href = url("login");
+	if (dashboardLink) dashboardLink.href = url("dashboard");
 
 	const params = new URLSearchParams(window.location.search);
 	const resourceId = params.get("id");
@@ -126,12 +135,11 @@ import Base from "../../../layouts/Base.astro";
 		}
 
 		try {
-			const sessionRes = await fetch("/api/auth/get-session", { credentials: "include" });
-			if (!sessionRes.ok) { loadingDiv.style.display = "none"; authCheck.style.display = "block"; return; }
-			const sessionData = await sessionRes.json();
-			if (!sessionData?.user) { loadingDiv.style.display = "none"; authCheck.style.display = "block"; return; }
+			const api = await getApiClient();
+			const session = await api.getSession();
+			if (!session?.user) { loadingDiv.style.display = "none"; authCheck.style.display = "block"; return; }
 
-			const role = sessionData.user.role ?? "reader";
+			const role = session.user.role ?? "reader";
 			const hierarchy = ["reader", "author", "curator", "admin"];
 			if (hierarchy.indexOf(role) < 1) {
 				loadingDiv.style.display = "none";
@@ -139,14 +147,13 @@ import Base from "../../../layouts/Base.astro";
 				return;
 			}
 
-			const res = await fetch(`/api/admin/resources/${resourceId}`, { credentials: "include" });
-			if (!res.ok) {
+			const r = await api.getResourceById(resourceId);
+			if (!r) {
 				loadingDiv.style.display = "none";
 				notFound.style.display = "block";
 				return;
 			}
 
-			const r = await res.json();
 			(document.getElementById("title") as HTMLInputElement).value = r.title ?? "";
 			(document.getElementById("description") as HTMLTextAreaElement).value = r.description ?? "";
 			(document.getElementById("language") as HTMLSelectElement).value = r.language ?? "es";
@@ -180,22 +187,17 @@ import Base from "../../../layouts/Base.astro";
 		};
 
 		try {
-			const res = await fetch(`/api/admin/resources/${resourceId}`, {
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify(body),
-			});
+			const api = await getApiClient();
+			const result = await api.updateResource(resourceId!, body);
 
-			if (res.ok) {
+			if (result.ok) {
 				successDiv.textContent = "Recurso actualizado correctamente.";
 				successDiv.style.display = "block";
 			} else {
-				const data = await res.json().catch(() => null);
-				if (data?.details) {
-					showFieldErrors(data.details);
+				if (result.details) {
+					showFieldErrors(result.details);
 				}
-				errorDiv.textContent = data?.error ?? "Error al actualizar el recurso";
+				errorDiv.textContent = result.error ?? "Error al actualizar el recurso";
 				errorDiv.style.display = "block";
 			}
 		} catch {
