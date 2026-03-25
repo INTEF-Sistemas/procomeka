@@ -10,6 +10,22 @@ import {
 	reader,
 } from "./permissions.ts";
 
+// Cargar .env desde la raíz del proyecto (bun --filter ejecuta desde apps/api/)
+const rootEnvPath = `${import.meta.dir}/../../../../.env`;
+const rootEnv = Bun.file(rootEnvPath);
+if (await rootEnv.exists()) {
+	const text = await rootEnv.text();
+	for (const line of text.split("\n")) {
+		const trimmed = line.trim();
+		if (!trimmed || trimmed.startsWith("#")) continue;
+		const eqIdx = trimmed.indexOf("=");
+		if (eqIdx === -1) continue;
+		const key = trimmed.slice(0, eqIdx).trim();
+		const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, "");
+		if (!process.env[key]) process.env[key] = val;
+	}
+}
+
 const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:4321";
 const oidcEnabled = process.env.OIDC_ENABLED === "true";
 
