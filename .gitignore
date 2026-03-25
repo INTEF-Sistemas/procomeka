@@ -18,6 +18,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # PGlite local dev database
 local-data/
 
+# Legacy SQLite database
+local.db
+
 # Preview serve directory
 .preview-serve
 
