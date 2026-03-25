@@ -13,6 +13,12 @@ deps:
 up:
 	$(BUN) run dev
 
+up-api:
+	$(BUN) run dev:api
+
+up-frontend:
+	$(BUN) run dev:frontend
+
 clean:
 	rm -rf node_modules
 	rm -rf .coverage

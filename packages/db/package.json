@@ -1,0 +1,22 @@
+{
+	"name": "@procomeka/db",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./schema": "./src/schema/index.ts"
+	},
+	"scripts": {
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:studio": "drizzle-kit studio",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.44.0"
+	},
+	"devDependencies": {
+		"drizzle-kit": "^0.31.0"
+	}
+}

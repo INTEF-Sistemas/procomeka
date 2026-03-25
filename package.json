@@ -1,11 +1,13 @@
 {
   "name": "procomeka",
   "version": "1.0.0",
-  "module": "index.ts",
+  "module": "apps/api/src/index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run index.ts",
+    "dev": "bun run --filter '@procomeka/*' dev",
+    "dev:api": "bun run --filter '@procomeka/api' dev",
+    "dev:frontend": "bun run --filter '@procomeka/frontend' dev",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "test": "bun test --coverage",
@@ -16,7 +18,8 @@
     "test:e2e:firefox": "playwright test --project=firefox"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "devDependencies": {
     "@types/bun": "latest",

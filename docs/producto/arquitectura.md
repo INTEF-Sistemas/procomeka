@@ -2,7 +2,7 @@
 
 ## Estado
 
-Borrador. Las capas marcadas como "pendiente de ADR" no tienen tecnología decidida.
+Definida en Fase 0. Tecnologías decididas para todas las capas principales.
 
 ---
 
@@ -34,7 +34,7 @@ El paso a la nueva arquitectura implicará un proceso de **Migración de Conteni
 
 ## Visión general
 
-El sistema se organiza en capas desacopladas con contratos explícitos entre ellas. El lenguaje de toda la pila es TypeScript. El runtime de servidor es Bun. La arquitectura sigue principios estrictos de simplicidad (KISS) para minimizar la carga operativa, basándose en un diseño monolítico que resuelve el almacenamiento en disco y la búsqueda en base de datos.
+El sistema se organiza en capas desacopladas con contratos explícitos entre ellas. El lenguaje de toda la pila es TypeScript (strict). El runtime de servidor es Bun. La arquitectura sigue principios estrictos de simplicidad (KISS) para minimizar la carga operativa, basándose en un diseño monolítico que resuelve el almacenamiento en disco y la búsqueda en base de datos.
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -45,50 +45,74 @@ El sistema se organiza en capas desacopladas con contratos explícitos entre ell
 ┌─────────────────▼───────────────────────────┐
 │                 API Layer                    │
 │     REST público + Admin API                 │
-│     TypeScript + Bun  [ADR pendiente]        │
+│     Hono + Bun  (ADR-0003)                   │
+│     apps/api/                                │
 └────────┬────────────────────────────────────┘
          │
 ┌────────▼────────┐
 │  Frontend       │
 │  público        │
-│  [ADR pendiente]│
+│  Astro          │
+│  (ADR-0004)     │
+│  apps/frontend/ │
 └─────────────────┘
          │
 ┌────────▼────────────────────────────────────┐
-│              Capa de servicios               │
-│   Catálogo, Curación, Búsqueda, Tareas       │
-│         TypeScript (dominio puro)            │
+│              Capa de datos                   │
+│   Drizzle ORM (ADR-0006)                     │
+│   packages/db/                               │
 └────────┬──────────────────┬─────────────────┘
          │                  │
 ┌────────▼────────┐ ┌───────▼─────────────────┐
-│  Base de datos  │ │  Sistema de Archivos     │
-│  [ADR pendiente]│ │  Local / Volumen montado │
-└─────────────────┘ └─────────────────────────┘
+│  PostgreSQL     │ │  Sistema de Archivos     │
+│  (ADR-0005)     │ │  Local / Volumen montado │
+│  prod/staging   │ └─────────────────────────┘
+├─────────────────┤
+│  SQLite         │
+│  (ADR-0002)     │
+│  preview/tests  │
+└─────────────────┘
+```
+
+## Estructura del monorepo
+
+```
+procomeka/
+├── apps/
+│   ├── api/          # Servidor API — Hono + Bun
+│   └── frontend/     # Frontend público — Astro
+├── packages/
+│   └── db/           # Esquema, migraciones, acceso a datos — Drizzle ORM
+├── docs/             # Documentación del proyecto
+├── e2e/              # Tests end-to-end — Playwright
+└── package.json      # Bun workspaces raíz
 ```
 
 ## Capas y responsabilidades
 
-### API Layer
+### API Layer — `apps/api/`
+- Framework: **Hono** (ADR-0003)
 - Expone endpoints REST para clientes externos y frontend
 - Valida entrada, aplica autenticación y autorización
 - Orquesta tareas programadas o asíncronas sencillas que pueden lanzarse vía API o CLI
 - No contiene lógica de negocio; delega en servicios
-- Pendiente de ADR: Hono + Bun vs Elysia vs Fastify
 
-### Frontend público
+### Frontend público — `apps/frontend/`
+- Framework: **Astro** (ADR-0004)
 - Interfaz pública para profesorado y ciudadanía
 - Búsqueda, fichas de recurso, colecciones, descarga
-- Pendiente de ADR: Next.js vs Astro vs Remix
+- Arquitectura de islas: mínimo JS en cliente, componentes interactivos solo donde aporten valor
 
-### Capa de servicios
-- Lógica de negocio: catálogo, curación, búsqueda (FTS en base de datos), usuarios, importación programada y procesamiento de archivos.
-- Tipos y contratos TypeScript compartidos entre capas
-- Sin dependencia directa de framework HTTP ni de ORM específico
+### Capa de datos — `packages/db/`
+- ORM: **Drizzle** (ADR-0006)
+- Esquema TypeScript que define tablas, relaciones y tipos inferidos
+- Migraciones versionadas en SQL plano (`drizzle-kit`)
+- Configuración dual: PostgreSQL (producción) / SQLite (preview/tests)
 
-### Base de datos
+### Base de datos — PostgreSQL (ADR-0005)
 - Almacenamiento principal de recursos, metadatos y usuarios
-- Índice de búsqueda (usando SQL FTS nativo, ej: Postgres Full-Text Search)
-- Pendiente de ADR: PostgreSQL vs SQLite/Turso
+- Índice de búsqueda (FTS nativo de PostgreSQL)
+- SQLite para previews estáticos en PRs (ADR-0002)
 
 ### Sistema de Archivos
 - Almacenamiento directo en disco físico de los archivos subidos, metadatos voluminosos en crudo o multimedia.
@@ -102,12 +126,13 @@ El sistema se organiza en capas desacopladas con contratos explícitos entre ell
 4. **Tareas de ingestión idempotentes**: toda importación puede reejecutarse sin efectos no deseados
 5. **Observabilidad desde el inicio**: logs estructurados, métricas, trazas en todas las capas
 6. **Accesibilidad como requisito**: no como añadido posterior
-7. **Entorno estático funcional por PR**: Capacidad de generar una versión estática de la plataforma (usando una base de datos local en cliente como PGLite o sql.js) para probar el sistema desde el navegador en cada Pull Request de forma ligera, sin despliegues de backend.
+7. **Entorno estático funcional por PR**: Capacidad de generar una versión estática de la plataforma (usando SQLite) para probar el sistema desde el navegador en cada Pull Request de forma ligera, sin despliegues de backend.
 
 ## ADRs relacionadas
 
 - [ADR-0001](../negocio/decisiones/0001-typescript-bun-como-stack-base.md): TypeScript + Bun como stack base
-- [ADR-0002](../negocio/decisiones/0002-preview-estatico-prs-con-sqlite.md): Preview estático de PRs (aceptado)
-- ADR-0003: Framework HTTP para API (pendiente)
-- ADR-0004: Framework frontend (pendiente)
-- ADR-0005: Base de datos principal (pendiente)
+- [ADR-0002](../negocio/decisiones/0002-preview-estatico-prs-con-sqlite.md): Preview estático de PRs con SQLite
+- [ADR-0003](../negocio/decisiones/0003-framework-http-api.md): Framework HTTP para API — Hono
+- [ADR-0004](../negocio/decisiones/0004-framework-frontend.md): Framework frontend — Astro
+- [ADR-0005](../negocio/decisiones/0005-base-de-datos-principal.md): Base de datos principal — PostgreSQL
+- [ADR-0006](../negocio/decisiones/0006-orm-y-capa-acceso-datos.md): ORM y capa de acceso a datos — Drizzle
