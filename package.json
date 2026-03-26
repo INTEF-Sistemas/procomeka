@@ -25,12 +25,9 @@
   ],
   "devDependencies": {
     "@types/bun": "latest",
-    "@playwright/test": "^1.42.0"
-  },
-  "peerDependencies": {
+    "@playwright/test": "^1.42.0",
+    "biome": "^0.3.3",
     "typescript": "^5"
   },
-  "dependencies": {
-    "biome": "^0.3.3"
-  }
+  "dependencies": {}
 }
