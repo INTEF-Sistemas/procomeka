@@ -155,3 +155,19 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-26 | `@.agents/skills/qa-validacion` + `@.agents/skills/documentacion-y-roadmap` | Alineación de `BETTER_AUTH_URL` con la URL pública local (`4321`) y documentación asociada | Completado |
+
+## Actualización 2026-03-26 (Frontend/paginación: recarga tras corrección de página fuera de rango)
+
+- **Agente en turno:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/qa-validacion/SKILL.md`
+- **Acción realizada:** Se corrige el flujo de listado para que, cuando la URL solicita una página fuera de rango (ej. `?page=999`), el frontend no renderice un falso vacío con `total > 0`.
+- **Cambios aplicados:**
+  - Nuevo helper `resolveResourcePage` que normaliza página con `getPaginationState` y dispara un segundo `listResources` cuando la página solicitada no coincide con la página válida.
+  - `index.astro` actualizado para usar ese helper, sincronizar la URL con la página corregida y renderizar usando la respuesta recargada.
+  - Test unitario añadido para garantizar el refetch al detectar página fuera de rango y prevenir regresiones.
+- **Validación ejecutada:** `bun test` en `apps/frontend` en verde (incluye el nuevo test de paginación con recarga).
+- **Riesgos abiertos:** La suite global en raíz mantiene un preload de tests API que falla por resolución de módulo en este entorno; no bloquea la validación local del cambio frontend.
+- **Traspaso recomendado:** `@.agents/skills/backend-api-servicios/SKILL.md` para evaluar clamp server-side de `offset` y eliminar doble request en cliente como hardening adicional.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-26 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/qa-validacion` | Fix P1 de paginación fuera de rango con refetch tras normalización + tests unitarios frontend | Completado |

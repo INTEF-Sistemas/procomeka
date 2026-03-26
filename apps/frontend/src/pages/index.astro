@@ -24,7 +24,8 @@ import Base from "../layouts/Base.astro";
 
 <script>
 	import { getApiClient } from "../lib/get-api-client.ts";
-	import { DEFAULT_PAGE_SIZE, getPaginationState } from "../lib/pagination.ts";
+	import { getPaginationState } from "../lib/pagination.ts";
+	import { resolveResourcePage } from "../lib/resource-list-pagination.ts";
 	import { url } from "../lib/paths.ts";
 
 	const list = document.getElementById("resources-list") as HTMLDivElement;
@@ -81,19 +82,18 @@ import Base from "../layouts/Base.astro";
 	}
 
 	async function loadResources() {
-		const offset = (currentPage - 1) * DEFAULT_PAGE_SIZE;
-
 		try {
 			const api = await getApiClient();
-			const { data, total, limit, offset: resolvedOffset } = await api.listResources({
-				q: currentQuery || undefined,
-				limit: DEFAULT_PAGE_SIZE,
-				offset,
+			const { page: resolvedPage, result } = await resolveResourcePage({
+				api,
+				page: currentPage,
+				query: currentQuery,
 			});
+			const { data, total, limit, offset: resolvedOffset } = result;
 			const state = getPaginationState(total, limit, resolvedOffset);
 
-			if (state.currentPage !== currentPage) {
-				currentPage = state.currentPage;
+			if (resolvedPage !== currentPage) {
+				currentPage = resolvedPage;
 				writeStateToUrl();
 			}
 
