@@ -1,6 +1,7 @@
 import { userCreate } from "./commands/user-create.ts";
 import { userList } from "./commands/user-list.ts";
 import { seed } from "./commands/seed.ts";
+import { seedResources } from "./commands/seed-resources.ts";
 
 const [command, ...args] = process.argv.slice(2);
 
@@ -8,6 +9,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 	"user:create": userCreate,
 	"user:list": userList,
 	seed: async () => seed(),
+	"seed:resources": seedResources,
 };
 
 async function main() {
@@ -16,7 +18,8 @@ async function main() {
 		console.log("Comandos disponibles:");
 		console.log("  user:create  --email <email> --name <nombre> --role <rol> --password <pass>");
 		console.log("  user:list");
-		console.log("  seed         Crear usuarios de desarrollo (admin, curator, author, reader)");
+		console.log("  seed              Crear usuarios de desarrollo (admin, curator, author, reader)");
+		console.log("  seed:resources    Generar recursos aleatorios (--count 10, 100, 1000, 10000 --clean)");
 		process.exit(0);
 	}
 

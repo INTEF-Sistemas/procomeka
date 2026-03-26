@@ -255,6 +255,11 @@ export class PreviewApiClient implements ApiClient {
 		await del(this.db, id);
 	}
 
+	async seedResources(count: number, clean?: boolean): Promise<{ count: number; durationMs: number }> {
+		const { seedRandomResources } = await import("@procomeka/db/seed-random");
+		return seedRandomResources(this.db, count, { clean });
+	}
+
 	// --- Preview-specific ---
 
 	switchRole(role: string) {

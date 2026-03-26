@@ -94,4 +94,7 @@ export interface ApiClient {
 	updateResource(id: string, data: UpdateResourceInput): Promise<{ ok: boolean; error?: string; details?: { field: string; message: string }[] }>;
 	updateResourceStatus(id: string, status: string): Promise<{ id: string; status: string }>;
 	deleteResource(id: string): Promise<void>;
+
+	// Dev
+	seedResources(count: number, clean?: boolean): Promise<{ count: number; durationMs: number }>;
 }

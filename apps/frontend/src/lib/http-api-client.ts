@@ -154,4 +154,18 @@ export class HttpApiClient implements ApiClient {
 			credentials: "include",
 		});
 	}
+
+	async seedResources(count: number, clean?: boolean): Promise<{ count: number; durationMs: number }> {
+		const res = await fetch("/api/dev/seed-resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			credentials: "include",
+			body: JSON.stringify({ count, clean }),
+		});
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			throw new Error(err.error || "Error al generar recursos");
+		}
+		return res.json();
+	}
 }
