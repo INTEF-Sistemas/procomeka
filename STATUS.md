@@ -119,3 +119,21 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-25 | `@.agents/skills/project-manager` + `@.agents/skills/documentacion-y-roadmap` | Creación de Épica 001, alineación de trazabilidad y corrección de separación `bun test` vs Playwright E2E | Completado |
+
+## Actualización 2026-03-26 (QA/Tooling: endurecimiento de `make test`)
+
+- **Agente en turno:** `@.agents/skills/qa-validacion/SKILL.md`
+- **Acción realizada:** Se endurece la orquestación de pruebas para que `make test` ejecute solo la suite estándar reproducible, sin globs frágiles ni `|| true`.
+- **Cambios aplicados:**
+  - `Makefile` alineado con `package.json`: `test` pasa a ejecutar suite estándar + coverage; `test-all` agrega E2E.
+  - Nuevo descubrimiento explícito de suites unitarias e integración mediante `scripts/run-bun-suite.ts`.
+  - Preflight de Playwright añadido con `scripts/check-e2e-env.ts` para fallos de entorno más claros.
+  - Tests automatizados añadidos para validar descubrimiento de suites y mensajes de preflight E2E.
+- **Riesgos abiertos:**
+  - No hay tests de integración reales todavía; el target los informa como omitidos en lugar de fingir ejecución.
+  - Los targets E2E siguen requiriendo un entorno con permisos de navegador.
+- **Traspaso recomendado:** `@.agents/skills/backend-api-servicios/SKILL.md` o `@.agents/skills/qa-validacion/SKILL.md` para introducir la primera suite de integración real cuando exista persistencia/servicios que lo justifiquen.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-26 | `@.agents/skills/qa-validacion` | Endurecimiento de `Makefile` y scripts de test; `make test` separado de E2E y validado con tests automatizados | Completado |

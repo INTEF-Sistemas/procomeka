@@ -51,30 +51,47 @@ format:
 lint:
 	$(BUN) run lint
 
-test: test-unit test-integration test-e2e check-coverage
+test:
+	$(BUN) run test
+
+test-standard:
+	$(BUN) run test:standard
 
 test-unit:
-	$(BUN) test --coverage *_test.ts *.test.ts *unit.test.ts **/*unit.test.ts || true
+	@echo "Running unit tests..."
+	$(BUN) run test:unit
 
 test-integration:
-	$(BUN) test --coverage *integration.test.ts **/*integration.test.ts || true
+	@echo "Running integration tests..."
+	$(BUN) run test:integration
+
+test-all: test test-e2e
 
 test-e2e:
+	@echo "Checking E2E browser environment (chromium)..."
+	$(BUN) run test:e2e:preflight chromium
+	@echo "Running E2E tests (chromium)..."
 	$(BUN) run test:e2e
 
 test-e2e-firefox:
+	@echo "Checking E2E browser environment (firefox)..."
+	$(BUN) run test:e2e:preflight firefox
+	@echo "Running E2E tests (firefox)..."
 	$(BUN) run test:e2e:firefox
 
 test-e2e-postgres:
 	@echo "Starting PostgreSQL for E2E tests..."
 	@docker compose -f e2e/docker-compose.postgres.yml up -d --wait
+	@echo "Checking E2E browser environment (chromium)..."
+	@$(BUN) run test:e2e:preflight chromium
 	@echo "Running E2E tests with PostgreSQL..."
 	@DATABASE_URL="postgres://e2e_user:e2e_password@localhost:5432/e2e_db" $(BUN) run test:e2e; \
-	RET=$$?; \
-	docker compose -f e2e/docker-compose.postgres.yml down -v; \
+		RET=$$?; \
+		docker compose -f e2e/docker-compose.postgres.yml down -v; \
 	if [ $$RET -ne 0 ]; then false; fi
 
 check-coverage:
+	@echo "Checking coverage threshold..."
 	$(BUN) run check-coverage
 
 cli:
