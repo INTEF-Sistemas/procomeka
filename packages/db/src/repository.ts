@@ -19,6 +19,14 @@ type DrizzleDB = {
 	[key: string]: any;
 };
 
+/**
+ * Normaliza un string para búsqueda insensible a mayúsculas y acentos.
+ * Usa translate para ser compatible con PGlite y PostgreSQL estándar sin extensiones.
+ */
+function normalizeSearch(col: any) {
+	return sql`lower(translate(${col}, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN'))`;
+}
+
 export async function listResources(
 	db: DrizzleDB,
 	opts: {
@@ -36,7 +44,13 @@ export async function listResources(
 
 	const conditions = [isNull(resources.deletedAt)];
 	if (opts.search) {
-		conditions.push(like(resources.title, `%${opts.search}%`));
+		const term = `%${opts.search.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}%`;
+		conditions.push(
+			sql`(${normalizeSearch(resources.title)} LIKE ${term} OR
+                 ${normalizeSearch(resources.description)} LIKE ${term} OR
+                 ${normalizeSearch(resources.author)} LIKE ${term} OR
+                 ${normalizeSearch(resources.keywords)} LIKE ${term})`,
+		);
 	}
 	if (opts.status) {
 		conditions.push(eq(resources.editorialStatus, opts.status));
