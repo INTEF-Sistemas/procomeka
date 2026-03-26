@@ -2,6 +2,8 @@
 
 Sustituto moderno de Procomún: plataforma de recursos educativos abiertos orientada a catalogación, descubrimiento, reutilización, curación, interoperabilidad y publicación.
 
+**[Ver preview en vivo](https://intef-proyectos.github.io/procomeka/)**
+
 ## Stack tecnológico base
 
 - **Lenguaje**: TypeScript (strict mode en toda la pila)
