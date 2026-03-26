@@ -137,3 +137,21 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-26 | `@.agents/skills/qa-validacion` | Endurecimiento de `Makefile` y scripts de test; `make test` separado de E2E y validado con tests automatizados | Completado |
+
+## Actualización 2026-03-26 (Auth/config: URL pública canónica en local)
+
+- **Agente en turno:** `@.agents/skills/qa-validacion/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se alinea la configuración de Better Auth con la URL pública real de desarrollo local.
+- **Cambios aplicados:**
+  - El fallback de `BETTER_AUTH_URL` pasa a usar `http://localhost:4321` como URL pública canónica en local.
+  - Se añaden helpers testeables en `apps/api/src/auth/config.ts` para fijar semántica de `FRONTEND_URL` y `BETTER_AUTH_URL`.
+  - Se añade test automatizado para evitar regresiones en defaults de auth.
+  - Se actualizan `.env.example` y `README.md` para explicar que Astro expone la app en `4321` y proxya `/api` al backend `3000`.
+- **Riesgos abiertos:**
+  - Conviene validar manualmente el inicio de flujo OIDC con proveedor demo tras cambios en `BETTER_AUTH_URL`.
+  - La documentación global de roadmap sigue parcialmente desalineada respecto al estado real de varias épicas.
+- **Traspaso recomendado:** `@.agents/skills/documentacion-y-roadmap/SKILL.md` para seguir corrigiendo desalineaciones de estado y roadmap tras consolidar validación funcional.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-26 | `@.agents/skills/qa-validacion` + `@.agents/skills/documentacion-y-roadmap` | Alineación de `BETTER_AUTH_URL` con la URL pública local (`4321`) y documentación asociada | Completado |

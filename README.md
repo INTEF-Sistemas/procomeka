@@ -28,6 +28,25 @@ make up-api    # Solo API (puerto 3000)
 make up-frontend  # Solo frontend (puerto 4321)
 ```
 
+Arquitectura local de red:
+
+- El navegador entra por `http://localhost:4321`.
+- Astro hace proxy de `'/api/*'` al backend interno en `http://localhost:3000`.
+- Por eso la URL pública canónica para auth en local es `http://localhost:4321`, aunque la API escuche en `3000`.
+
+Uso de `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+- No es obligatorio crear `.env` para desarrollar: sin él, el proyecto usa PGlite local y defaults razonables.
+- `DATABASE_URL` solo hace falta si quieres usar PostgreSQL real.
+- `FRONTEND_URL` define el origen confiable del frontend para CORS y sesiones.
+- `BETTER_AUTH_URL` define la URL pública/base que Better Auth usa para redirects y callbacks.
+- En desarrollo local normal, `FRONTEND_URL` y `BETTER_AUTH_URL` deben apuntar a `http://localhost:4321`.
+- Si `OIDC_ENABLED` no está en `true`, el login institucional no se activa.
+
 ### Preview estático para PRs
 
 Cada Pull Request publica automáticamente un preview en GitHub Pages usando PGlite WASM en el navegador. El preview:
@@ -199,6 +218,7 @@ Para agilizar el desarrollo, hemos implementado un \`Makefile\`. Puedes usar:
 
 - \`make deps\`: Instala las dependencias usando \`bun install\`.
 - \`make up\`: Ejecuta el entorno de desarrollo (\`bun run dev\`).
+- \`make up\` instala dependencias, ejecuta seed y arranca frontend + API; la entrada pública es \`http://localhost:4321\` y \`/api\` se proxya al backend en \`3000\`.
 - \`make clean\`: Limpia los directorios temporales, \`.coverage\` y \`node_modules\`.
 - \`make lint\`: Comprueba reglas de código usando **Biome**.
 - \`make format\`: Aplica el formateado de código automáticamente con **Biome**.

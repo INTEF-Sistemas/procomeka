@@ -11,12 +11,13 @@ import {
 } from "./permissions.ts";
 import * as pgSchema from "@procomeka/db/schema";
 import { getDb } from "../db.ts";
+import { getAuthBaseUrl, getFrontendUrl } from "./urls.ts";
 
-const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:4321";
+const frontendUrl = getFrontendUrl();
 const oidcEnabled = process.env.OIDC_ENABLED === "true";
 
 export const auth = betterAuth({
-	baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+	baseURL: getAuthBaseUrl(),
 	trustedOrigins: [frontendUrl],
 	database: drizzleAdapter(getDb().db, { provider: "pg", schema: pgSchema }),
 	basePath: "/api/auth",
