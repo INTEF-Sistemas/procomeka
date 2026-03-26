@@ -1,10 +1,19 @@
 import { spawn } from "node:child_process";
 
+import { buildBunTestArgs, findStandardTestFiles } from "./run-bun-suite.ts";
+
 const THRESHOLD = 90;
 
-function runCoverage() {
+async function runCoverage() {
+	const files = await findStandardTestFiles();
+
+	if (files.length === 0) {
+		console.error("❌ No se encontraron tests estándar para calcular coverage");
+		process.exit(1);
+	}
+
 	const env = { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" };
-	const proc = spawn("bun", ["test", "--coverage", "apps/api/src/"], { env });
+	const proc = spawn("bun", buildBunTestArgs(files, { coverage: true }), { env });
 
 	let output = "";
 
@@ -48,4 +57,4 @@ function runCoverage() {
 	});
 }
 
-runCoverage();
+await runCoverage();
