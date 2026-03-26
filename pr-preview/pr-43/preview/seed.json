@@ -91,5 +91,14 @@
 		{ "resourceId": "res-4", "level": "bachillerato" },
 		{ "resourceId": "res-5", "level": "educacion-primaria" },
 		{ "resourceId": "res-5", "level": "educacion-secundaria-obligatoria" }
+	],
+	"taxonomies": [
+		{ "id": "tax-1", "slug": "matematicas", "name": "Matemáticas", "type": "subject" },
+		{ "id": "tax-2", "slug": "ciencias", "name": "Ciencias", "type": "subject" },
+		{ "id": "tax-3", "slug": "primaria", "name": "Primaria", "type": "level" },
+		{ "id": "tax-4", "slug": "secundaria", "name": "Secundaria", "type": "level" }
+	],
+	"collections": [
+		{ "id": "col-1", "slug": "recursos-destacados", "title": "Recursos destacados", "description": "Una selección de los mejores recursos.", "curatorId": "demo-admin", "isOrdered": 0 }
 	]
 }

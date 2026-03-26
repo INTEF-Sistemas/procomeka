@@ -1,0 +1,13 @@
+import{g as s}from"./get-api-client.lL_BHjf4.js";import"./preload-helper.DpnhIzxq.js";const g={subject:"Materia",level:"Nivel",resource_type:"Tipo Recurso",category:"Categoría"},v=document.getElementById("btn-create"),o=document.getElementById("taxonomies-list"),r=document.getElementById("type-filter"),d=document.getElementById("tax-modal"),c=document.getElementById("modal-title"),l=document.getElementById("modal-id"),m=document.getElementById("tax-form"),I=document.getElementById("cancel-btn"),p=document.getElementById("name"),u=document.getElementById("type"),y=document.getElementById("description"),E=document.getElementById("parentId");async function i(){o.innerHTML='<p class="loading-text">Cargando taxonomías...</p>';try{const a=await s(),n=r.value||void 0,t=await a.listTaxonomies(n);b(t)}catch{o.innerHTML="<p class='error-text'>Error al cargar taxonomías o permisos insuficientes.</p>"}}function b(a){if(!a||a.length===0){o.innerHTML="<p>No se encontraron taxonomías.</p>";return}const n=a.map(t=>`<tr>
+				<td><strong>${t.name}</strong></td>
+				<td><span class="type-tag">${g[t.type]||t.type}</span></td>
+				<td>${t.slug}</td>
+				<td>${t.parentId||"-"}</td>
+				<td class="actions">
+					<button class="action-btn edit-btn" data-id="${t.id}" data-name="${t.name}" data-type="${t.type}" data-description="${t.description||""}" data-parent="${t.parentId||""}" title="Editar">✏️</button>
+					<button class="action-btn delete-btn" data-id="${t.id}" title="Eliminar">🗑️</button>
+				</td>
+			</tr>`).join("");o.innerHTML=`<table>
+			<thead><tr><th>Nombre</th><th>Tipo</th><th>Slug</th><th>Padre</th><th>Acciones</th></tr></thead>
+			<tbody>${n}</tbody>
+		</table>`,o.querySelectorAll(".delete-btn").forEach(t=>{t.addEventListener("click",async()=>{const e=t.dataset.id;e&&confirm("¿Eliminar esta taxonomía?")&&(await(await s()).deleteTaxonomy(e),i())})}),o.querySelectorAll(".edit-btn").forEach(t=>{t.addEventListener("click",()=>{const e=t;l.value=e.dataset.id,c.textContent="Editar entrada",p.value=e.dataset.name,u.value=e.dataset.type,y.value=e.dataset.description,E.value=e.dataset.parent,d.style.display="flex"})})}r.addEventListener("change",()=>{i()});v.addEventListener("click",()=>{l.value="",c.textContent="Nueva entrada",m.reset(),d.style.display="flex"});I.addEventListener("click",()=>{d.style.display="none"});m.addEventListener("submit",async a=>{a.preventDefault();const n=l.value,t={name:p.value,type:u.value,description:y.value,parentId:E.value||null};try{const e=await s();n?await e.updateTaxonomy(n,t):await e.createTaxonomy(t),d.style.display="none",i()}catch{alert("Error al guardar la taxonomía")}});i();
