@@ -139,13 +139,23 @@ export class PreviewApiClient implements ApiClient {
 
 	// --- Public API ---
 
-	async listResources(opts?: { q?: string; limit?: number; offset?: number }): Promise<ResourceListResult> {
+	async listResources(opts?: {
+		q?: string;
+		limit?: number;
+		offset?: number;
+		resourceType?: string;
+		language?: string;
+		license?: string;
+	}): Promise<ResourceListResult> {
 		const { listResources: list } = await import("@procomeka/db/repository");
 		return list(this.db, {
 			limit: opts?.limit,
 			offset: opts?.offset,
 			search: opts?.q,
 			status: "published",
+			resourceType: opts?.resourceType,
+			language: opts?.language,
+			license: opts?.license,
 		});
 	}
 

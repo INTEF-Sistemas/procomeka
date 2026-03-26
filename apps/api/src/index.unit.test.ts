@@ -4,6 +4,8 @@ import { createResource, updateEditorialStatus } from "./resources/repository.ts
 
 let publishedSlug: string;
 let draftSlug: string;
+let videoSlug: string;
+let englishSlug: string;
 
 beforeAll(async () => {
 	const draft = await createResource({
@@ -24,6 +26,26 @@ beforeAll(async () => {
 	});
 	publishedSlug = pub.slug;
 	await updateEditorialStatus(pub.id, "published", "system");
+
+	const video = await createResource({
+		title: "Video publicado test",
+		description: "Recurso de video publicado",
+		language: "es",
+		license: "cc-by-sa",
+		resourceType: "video",
+	});
+	videoSlug = video.slug;
+	await updateEditorialStatus(video.id, "published", "system");
+
+	const english = await createResource({
+		title: "English lesson resource",
+		description: "Published english resource",
+		language: "en",
+		license: "cc0",
+		resourceType: "documento",
+	});
+	englishSlug = english.slug;
+	await updateEditorialStatus(english.id, "published", "system");
 });
 
 describe("Endpoints básicos", () => {
@@ -93,6 +115,42 @@ describe("Rutas públicas /api/v1", () => {
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(Array.isArray(body.data)).toBe(true);
+	});
+
+	test("GET /api/v1/resources?resourceType= filtra por tipo", async () => {
+		const res = await app.request("/api/v1/resources?resourceType=video");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		const slugs = body.data.map((r: { slug: string }) => r.slug);
+		expect(slugs).toContain(videoSlug);
+		expect(slugs).not.toContain(publishedSlug);
+	});
+
+	test("GET /api/v1/resources?language= filtra por idioma", async () => {
+		const res = await app.request("/api/v1/resources?language=en");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		const slugs = body.data.map((r: { slug: string }) => r.slug);
+		expect(slugs).toContain(englishSlug);
+		expect(slugs).not.toContain(publishedSlug);
+	});
+
+	test("GET /api/v1/resources?license= filtra por licencia", async () => {
+		const res = await app.request("/api/v1/resources?license=cc0");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		const slugs = body.data.map((r: { slug: string }) => r.slug);
+		expect(slugs).toContain(englishSlug);
+		expect(slugs).not.toContain(videoSlug);
+	});
+
+	test("GET /api/v1/resources combina texto y filtros", async () => {
+		const res = await app.request("/api/v1/resources?q=English&language=en&license=cc0");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		const slugs = body.data.map((r: { slug: string }) => r.slug);
+		expect(slugs).toContain(englishSlug);
+		expect(body.data.every((r: { language: string; license: string }) => r.language === "en" && r.license === "cc0")).toBe(true);
 	});
 
 	test("GET /api/v1/collections devuelve lista", async () => {

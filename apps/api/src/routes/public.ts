@@ -7,8 +7,19 @@ publicRoutes.get("/resources", async (c) => {
 	const limit = Number(c.req.query("limit") ?? "20");
 	const offset = Number(c.req.query("offset") ?? "0");
 	const search = c.req.query("q") ?? undefined;
+	const resourceType = c.req.query("resourceType") ?? undefined;
+	const language = c.req.query("language") ?? undefined;
+	const license = c.req.query("license") ?? undefined;
 
-	const result = await listResources({ limit, offset, search, status: "published" });
+	const result = await listResources({
+		limit,
+		offset,
+		search,
+		status: "published",
+		resourceType,
+		language,
+		license,
+	});
 	return c.json(result);
 });
 
