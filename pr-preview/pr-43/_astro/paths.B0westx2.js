@@ -1,0 +1,1 @@
+function _(r){let i="/";if(typeof window<"u"){const n=window;n.__BASE_URL__!==void 0&&(i=n.__BASE_URL__)}else i="/procomeka/pr-preview/pr-43/";let e=r.replace(/^\//,"");return(typeof window<"u"?window.__PREVIEW_MODE__===!0:!0)&&e&&!e.includes(".")&&!e.endsWith("/")&&(e+="/"),i.endsWith("/")?i+e:i+"/"+e}export{_ as u};
