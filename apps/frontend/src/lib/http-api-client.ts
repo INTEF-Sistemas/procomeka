@@ -14,11 +14,21 @@ import type {
  * Usado en modo normal (desarrollo y producción).
  */
 export class HttpApiClient implements ApiClient {
-	async listResources(opts?: { q?: string; limit?: number; offset?: number }): Promise<ResourceListResult> {
+	async listResources(opts?: {
+		q?: string;
+		limit?: number;
+		offset?: number;
+		resourceType?: string;
+		language?: string;
+		license?: string;
+	}): Promise<ResourceListResult> {
 		const params = new URLSearchParams();
 		if (opts?.q) params.set("q", opts.q);
 		if (opts?.limit) params.set("limit", String(opts.limit));
 		if (opts?.offset) params.set("offset", String(opts.offset));
+		if (opts?.resourceType) params.set("resourceType", opts.resourceType);
+		if (opts?.language) params.set("language", opts.language);
+		if (opts?.license) params.set("license", opts.license);
 		const qs = params.toString();
 		const res = await fetch(`/api/v1/resources${qs ? `?${qs}` : ""}`);
 		return res.json();

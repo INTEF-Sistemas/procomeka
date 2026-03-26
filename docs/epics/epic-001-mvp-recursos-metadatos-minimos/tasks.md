@@ -45,3 +45,18 @@ En desarrollo
   - Frontend: formularios con accesibilidad WCAG AA (aria-describedby, aria-invalid, role=alert), vista de edición, listado en dashboard.
   - Tests: 73 tests pasando (validación, admin CRUD+RBAC, integración pública, filtrado).
   - ADR-0009: perfil mínimo de metadatos documentado.
+
+## Actualización 2026-03-26
+
+- Se alinea `docs/producto/roadmap.md` con el estado real de la épica y del catálogo público.
+- La capacidad pública derivada del MVP ya incluye:
+  - listado de recursos publicados,
+  - ficha pública de recurso,
+  - búsqueda por texto libre,
+  - paginación navegable,
+  - filtros básicos por tipo, idioma y licencia.
+- El entregable funcional base de la Épica 001 queda materializado en código y validado por tests automatizados.
+- El siguiente tramo recomendado sale ya fuera del núcleo mínimo de esta épica:
+  - flujo editorial de recursos,
+  - facetas de búsqueda más ricas,
+  - colecciones públicas reales.

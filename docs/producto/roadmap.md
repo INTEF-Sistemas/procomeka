@@ -29,14 +29,14 @@ Base técnica y documental completada. API, auth y frontend editorial mínimo ya
 
 | Épica | Estado |
 |-------|--------|
-| Modelo de metadatos mínimo | No iniciada |
+| Modelo de metadatos mínimo | Completado — ADR-0009 aceptada, validación mínima y CRUD real de recursos entregados |
 | Arquitectura base del sistema | Completado — monorepo, Hono, Astro, Drizzle, PGlite dev |
 | Autenticación y autorización | Completado — Better Auth (password + OIDC), RBAC, CLI usuarios, login/dashboard |
 | Flujo editorial de recursos | No iniciada |
-| Búsqueda y facetas iniciales | No iniciada |
-| API REST pública v1 | En desarrollo — rutas base `/api/v1`, `health`, `config` y placeholders de recursos/colecciones |
+| Búsqueda y facetas iniciales | En desarrollo — búsqueda por texto, paginación e interfaz de filtros básicos por tipo, idioma y licencia |
+| API REST pública v1 | En desarrollo — listado y detalle de recursos publicados, paginación y filtros básicos; colecciones siguen en placeholder |
 | Importación piloto desde CSV | No iniciada |
-| Frontend público mínimo | En desarrollo — landing, login y dashboard; catálogo público aún pendiente |
+| Frontend público mínimo | En desarrollo — catálogo público, ficha de recurso, paginación y filtros básicos; faltan colecciones y refinamientos de descubrimiento |
 
 ---
 
@@ -116,3 +116,23 @@ El proyecto ya superó la fase de mera fundación técnica. La base de plataform
 - Alcance inicial: metadatos mínimos + CRUD real de recursos + validación mínima + base para búsqueda posterior.
 - Estado de la épica: **En planificación activa**, con tareas ejecutables por dominios (documentación, backend, BD, frontend, testing).
 - Dependencia explícita para próxima iteración: ADR de perfil mínimo de metadatos y ejecución del CRUD persistente.
+
+## Actualización de estado — 2026-03-26
+
+### Confirmado en repositorio
+
+- El catálogo público ya ofrece listado de recursos publicados, ficha de detalle y búsqueda por texto libre.
+- La búsqueda pública ya soporta paginación navegable con historial del navegador.
+- La búsqueda pública ya soporta filtros básicos por `resourceType`, `language` y `license`.
+- El contrato público `/api/v1/resources` acepta `q`, `limit`, `offset`, `resourceType`, `language` y `license`.
+- La suite estándar permanece en verde con cobertura por encima del umbral.
+
+### Lectura ejecutiva
+
+El MVP base de catálogo ya no está en fase de mera preparación. La plataforma dispone de CRUD real de recursos, lectura pública de recursos publicados y una primera experiencia de descubrimiento usable para el catálogo. El principal hueco funcional pasa a ser el flujo editorial de recursos y la evolución de búsqueda hacia facetas más ricas.
+
+### Siguiente tramo recomendado
+
+1. Materializar flujo editorial de recursos como experiencia end-to-end.
+2. Profundizar búsqueda pública con filtros de nivel/materia o facetas contadas.
+3. Sustituir placeholders de colecciones públicas por persistencia real.

@@ -25,6 +25,9 @@ export async function listResources(
 		offset?: number;
 		search?: string;
 		status?: string;
+		resourceType?: string;
+		language?: string;
+		license?: string;
 	},
 ) {
 	const limit = Math.min(opts.limit ?? 20, 100);
@@ -36,6 +39,15 @@ export async function listResources(
 	}
 	if (opts.status) {
 		conditions.push(eq(resources.editorialStatus, opts.status));
+	}
+	if (opts.resourceType) {
+		conditions.push(eq(resources.resourceType, opts.resourceType));
+	}
+	if (opts.language) {
+		conditions.push(eq(resources.language, opts.language));
+	}
+	if (opts.license) {
+		conditions.push(eq(resources.license, opts.license));
 	}
 
 	const where = conditions.reduce((a, b) => sql`${a} AND ${b}`);

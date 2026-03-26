@@ -5,7 +5,7 @@ Debéis leer este archivo antes de comenzar cualquier tarea para entender el con
 
 ## Fase Actual: Fase 1 — MVP de catálogo
 
-- **Épica activa:** Transversal de plataforma base completada; siguiente foco recomendado: modelo de metadatos mínimo + recursos persistidos
+- **Épica activa:** Catálogo MVP operativo en desarrollo; siguiente foco recomendado: flujo editorial de recursos + siguiente tramo de búsqueda/facetas
 - **Agente en turno:** @.agents/skills/documentacion-y-roadmap/SKILL.md
 
 ## ADRs Bloqueantes (Prioridad Alta)
@@ -171,3 +171,26 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-26 | `@.agents/skills/frontend-ux-accesibilidad` | Paginación del listado usa `pushState` y mantiene `replaceState` para búsqueda; helper y tests unitarios añadidos | Completado |
+
+## Actualización 2026-03-26 (Catálogo público: filtros básicos y alineación documental)
+
+- **Agente en turno:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se completa el siguiente tramo del catálogo público con filtros básicos por tipo, idioma y licencia, y se alinea la documentación de estado con la implementación real.
+- **Cambios aplicados:**
+  - Búsqueda pública ampliada con filtros por `resourceType`, `language` y `license`.
+  - Estado del listado sincronizado en URL junto con búsqueda y paginación.
+  - API pública y repositorio compartido alineados con el nuevo contrato de filtros.
+  - Roadmap actualizado para reflejar que el catálogo público ya dispone de listado, ficha, paginación y filtros básicos.
+  - Trazabilidad de Épica 001 ampliada para reflejar cierre documental y el estado real del MVP base.
+- **Validación:**
+  - `make test`
+  - `bun run lint`
+- **Riesgos abiertos:**
+  - Colecciones públicas siguen en placeholder.
+  - Flujo editorial de recursos sigue sin materializarse como experiencia completa de producto.
+  - La búsqueda sigue siendo básica: sin facetas contadas, sin nivel/materia y sin ranking avanzado.
+- **Traspaso recomendado:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/backend-api-servicios/SKILL.md` para el siguiente tramo de flujo editorial o profundización de búsqueda.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-26 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Filtros básicos del catálogo público (tipo, idioma, licencia) y alineación de roadmap/estado con la implementación actual | Completado |

@@ -9,6 +9,9 @@ export async function listResources(opts: {
 	offset?: number;
 	search?: string;
 	status?: string;
+	resourceType?: string;
+	language?: string;
+	license?: string;
 }) {
 	return repo.listResources(getDb().db, opts);
 }

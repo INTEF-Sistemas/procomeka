@@ -68,7 +68,14 @@ export type UpdateResourceInput = Partial<CreateResourceInput>;
 
 export interface ApiClient {
 	// Public
-	listResources(opts?: { q?: string; limit?: number; offset?: number }): Promise<ResourceListResult>;
+	listResources(opts?: {
+		q?: string;
+		limit?: number;
+		offset?: number;
+		resourceType?: string;
+		language?: string;
+		license?: string;
+	}): Promise<ResourceListResult>;
 	getResourceBySlug(slug: string): Promise<Resource | null>;
 	getConfig(): Promise<AppConfig>;
 

@@ -86,6 +86,55 @@ describe("Repository — CRUD completo", () => {
 		expect(Array.isArray(result.data)).toBe(true);
 	});
 
+	test("listResources filtra por resourceType", async () => {
+		const video = await createResource({
+			...baseResource,
+			title: "Recurso video repo",
+			resourceType: "video",
+		});
+
+		const result = await listResources({ resourceType: "video" });
+		const ids = result.data.map((resource) => resource.id);
+		expect(ids).toContain(video.id);
+		expect(ids).not.toContain(createdId);
+	});
+
+	test("listResources filtra por language", async () => {
+		const english = await createResource({
+			...baseResource,
+			title: "English repo resource",
+			language: "en",
+		});
+
+		const result = await listResources({ language: "en" });
+		const ids = result.data.map((resource) => resource.id);
+		expect(ids).toContain(english.id);
+		expect(ids).not.toContain(createdId);
+	});
+
+	test("listResources filtra por license", async () => {
+		const open = await createResource({
+			...baseResource,
+			title: "CC0 repo resource",
+			license: "cc0",
+		});
+
+		const result = await listResources({ license: "cc0" });
+		const ids = result.data.map((resource) => resource.id);
+		expect(ids).toContain(open.id);
+		expect(ids).not.toContain(createdId);
+	});
+
+	test("listResources combina busqueda y filtros", async () => {
+		const result = await listResources({
+			search: "English",
+			language: "en",
+		});
+
+		expect(result.data.some((resource) => resource.title === "English repo resource")).toBe(true);
+		expect(result.data.every((resource) => resource.language === "en")).toBe(true);
+	});
+
 	test("updateResource → actualiza campos", async () => {
 		await updateResource(createdId, { title: "Título actualizado repo" });
 		const resource = await getResourceById(createdId);

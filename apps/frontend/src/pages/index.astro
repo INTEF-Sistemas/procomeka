@@ -1,5 +1,10 @@
 ---
 import Base from "../layouts/Base.astro";
+import {
+	LANGUAGE_OPTIONS,
+	LICENSE_OPTIONS,
+	RESOURCE_TYPE_OPTIONS,
+} from "../lib/resource-filters.ts";
 ---
 
 <Base title="Inicio">
@@ -7,6 +12,21 @@ import Base from "../layouts/Base.astro";
 
 	<div class="search-bar">
 		<input type="text" id="search" placeholder="Buscar recursos..." aria-label="Buscar recursos" />
+		<select id="filter-resource-type" aria-label="Filtrar por tipo de recurso">
+			{RESOURCE_TYPE_OPTIONS.map((option) => (
+				<option value={option.value}>{option.label}</option>
+			))}
+		</select>
+		<select id="filter-language" aria-label="Filtrar por idioma">
+			{LANGUAGE_OPTIONS.map((option) => (
+				<option value={option.value}>{option.label}</option>
+			))}
+		</select>
+		<select id="filter-license" aria-label="Filtrar por licencia">
+			{LICENSE_OPTIONS.map((option) => (
+				<option value={option.value}>{option.label}</option>
+			))}
+		</select>
 	</div>
 
 	<div id="results-summary" class="results-summary" aria-live="polite"></div>
@@ -24,13 +44,20 @@ import Base from "../layouts/Base.astro";
 
 <script>
 	import { getApiClient } from "../lib/get-api-client.ts";
-	import { buildListingUrl, writeListingStateToHistory } from "../lib/listing-history.ts";
+	import {
+		buildListingUrl,
+		readListingState,
+		writeListingStateToHistory,
+	} from "../lib/listing-history.ts";
 	import { DEFAULT_PAGE_SIZE, getPaginationState } from "../lib/pagination.ts";
 	import { url } from "../lib/paths.ts";
 
 	const list = document.getElementById("resources-list") as HTMLDivElement;
 	const resultsSummary = document.getElementById("results-summary") as HTMLDivElement;
 	const searchInput = document.getElementById("search") as HTMLInputElement;
+	const resourceTypeFilter = document.getElementById("filter-resource-type") as HTMLSelectElement;
+	const languageFilter = document.getElementById("filter-language") as HTMLSelectElement;
+	const licenseFilter = document.getElementById("filter-license") as HTMLSelectElement;
 	const pagination = document.getElementById("pagination") as HTMLElement;
 	const prevButton = document.getElementById("pagination-prev") as HTMLButtonElement;
 	const nextButton = document.getElementById("pagination-next") as HTMLButtonElement;
@@ -38,16 +65,31 @@ import Base from "../layouts/Base.astro";
 
 	let currentQuery = "";
 	let currentPage = 1;
+	let currentResourceType = "";
+	let currentLanguage = "";
+	let currentLicense = "";
 
 	function readStateFromUrl() {
-		const params = new URLSearchParams(window.location.search);
-		currentQuery = params.get("q") ?? "";
-		currentPage = Math.max(1, Number(params.get("page") ?? "1") || 1);
+		const state = readListingState(window.location.search);
+		currentQuery = state.query;
+		currentPage = state.page;
+		currentResourceType = state.resourceType;
+		currentLanguage = state.language;
+		currentLicense = state.license;
 		searchInput.value = currentQuery;
+		resourceTypeFilter.value = currentResourceType;
+		languageFilter.value = currentLanguage;
+		licenseFilter.value = currentLicense;
 	}
 
 	function writeStateToUrl(mode: "push" | "replace" = "replace") {
-		const target = buildListingUrl(window.location.pathname, window.location.search, currentQuery, currentPage);
+		const target = buildListingUrl(window.location.pathname, window.location.search, {
+			query: currentQuery,
+			page: currentPage,
+			resourceType: currentResourceType,
+			language: currentLanguage,
+			license: currentLicense,
+		});
 		writeListingStateToHistory(window.history, target, mode);
 	}
 
@@ -76,6 +118,9 @@ import Base from "../layouts/Base.astro";
 				q: currentQuery || undefined,
 				limit: DEFAULT_PAGE_SIZE,
 				offset,
+				resourceType: currentResourceType || undefined,
+				language: currentLanguage || undefined,
+				license: currentLicense || undefined,
 			});
 			const state = getPaginationState(total, limit, resolvedOffset);
 
@@ -86,7 +131,7 @@ import Base from "../layouts/Base.astro";
 
 			resultsSummary.textContent =
 				total === 0
-					? "No hay resultados para la búsqueda actual."
+					? "No hay resultados para la busqueda actual."
 					: `Mostrando ${state.startItem}-${state.endItem} de ${state.total} recursos.`;
 
 			if (data.length === 0) {
@@ -129,6 +174,19 @@ import Base from "../layouts/Base.astro";
 		}, 300);
 	});
 
+	function handleFilterChange() {
+		currentResourceType = resourceTypeFilter.value;
+		currentLanguage = languageFilter.value;
+		currentLicense = licenseFilter.value;
+		currentPage = 1;
+		writeStateToUrl("replace");
+		loadResources();
+	}
+
+	resourceTypeFilter.addEventListener("change", handleFilterChange);
+	languageFilter.addEventListener("change", handleFilterChange);
+	licenseFilter.addEventListener("change", handleFilterChange);
+
 	prevButton.addEventListener("click", () => {
 		if (currentPage === 1) return;
 		currentPage -= 1;
@@ -157,15 +215,20 @@ import Base from "../layouts/Base.astro";
 	h1 { margin-bottom: 1rem; }
 
 	.search-bar {
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+		gap: 0.75rem;
 		margin-bottom: 1.5rem;
 	}
 
-	.search-bar input {
+	.search-bar input,
+	.search-bar select {
 		width: 100%;
 		padding: 0.75rem;
 		border: 1px solid #d1d5db;
 		border-radius: 6px;
 		font-size: 1rem;
+		background: white;
 	}
 
 	.resources-list {
@@ -271,6 +334,10 @@ import Base from "../layouts/Base.astro";
 	}
 
 	@media (max-width: 640px) {
+		.search-bar {
+			grid-template-columns: 1fr;
+		}
+
 		.pagination {
 			flex-direction: column;
 			align-items: stretch;
