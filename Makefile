@@ -1,4 +1,4 @@
-.PHONY: deps up down clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage cli seed build-preview up-static up-docker down-docker seed-docker
+.PHONY: deps up down clean format lint test test-unit test-integration test-e2e test-e2e-firefox test-e2e-postgres check-coverage cli seed build-preview up-static up-docker down-docker seed-docker up-postgres
 
 # Variables
 BUN = bun
@@ -99,6 +99,18 @@ cli:
 
 seed:
 	$(BUN) run --filter '@procomeka/cli' cli -- seed
+
+up-postgres: deps
+	@echo "Levantando PostgreSQL en Docker para desarrollo local..."
+	@docker compose up -d db
+	@echo "Ejecutando seed sobre PostgreSQL real..."
+	@DATABASE_URL="postgres://procomeka:procomeka@localhost:5432/procomeka" \
+		$(BUN) run --filter '@procomeka/cli' cli -- seed
+	@echo "Arrancando API + frontend local con PostgreSQL real..."
+	@DATABASE_URL="postgres://procomeka:procomeka@localhost:5432/procomeka" \
+		FRONTEND_URL="http://localhost:4321" \
+		BETTER_AUTH_URL="http://localhost:4321" \
+		$(BUN) run dev
 
 # Docker
 up-docker:

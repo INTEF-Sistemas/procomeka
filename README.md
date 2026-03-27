@@ -47,6 +47,100 @@ cp .env.example .env
 - En desarrollo local normal, `FRONTEND_URL` y `BETTER_AUTH_URL` deben apuntar a `http://localhost:4321`.
 - Si `OIDC_ENABLED` no está en `true`, el login institucional no se activa.
 
+### Desarrollo con Docker + PostgreSQL real
+
+El repositorio incluye un `docker-compose.yml` para levantar una base de datos PostgreSQL real y la API sobre contenedores.
+
+Estado actual del stack Docker:
+
+- `db`: PostgreSQL 17 en `localhost:5432`
+- `api`: backend en `http://localhost:3000`
+- `seed`: servicio puntual para cargar datos de desarrollo
+- El frontend no se levanta con Docker en la configuración actual; se ejecuta localmente con Bun/Astro
+
+Comandos disponibles:
+
+```bash
+make up-docker    # Levanta PostgreSQL + API en Docker
+make seed-docker  # Ejecuta el seed dentro de Docker
+make down-docker  # Detiene y elimina los contenedores
+```
+
+#### Opción A: entorno de desarrollo completo
+
+Útil si quieres probar la aplicación con PostgreSQL real, dejando PostgreSQL + API en Docker y levantando el frontend localmente con Bun.
+
+```bash
+make up-docker
+make seed-docker
+bun run dev:frontend
+```
+
+Servicios resultantes:
+
+- Frontend: `http://localhost:4321`
+- API: `http://localhost:3000`
+- PostgreSQL: `postgres://procomeka:procomeka@localhost:5432/procomeka`
+
+#### Opción B: PostgreSQL real en Docker + frontend local
+
+Es el flujo más práctico para desarrollo diario si quieres probar la UI contra una base PostgreSQL real.
+
+Comando directo:
+
+```bash
+make up-postgres
+```
+
+Este target hace todo lo necesario:
+
+- instala dependencias si faltan
+- levanta PostgreSQL en Docker
+- ejecuta el seed sobre PostgreSQL real
+- arranca API + frontend en local con `bun run dev`
+
+Equivalente manual:
+
+1. Levanta solo PostgreSQL:
+
+```bash
+docker compose up -d db
+```
+
+2. Arranca la API local apuntando a PostgreSQL:
+
+```bash
+DATABASE_URL=postgres://procomeka:procomeka@localhost:5432/procomeka \
+FRONTEND_URL=http://localhost:4321 \
+BETTER_AUTH_URL=http://localhost:4321 \
+bun run dev:api
+```
+
+3. En otra terminal, arranca el frontend:
+
+```bash
+bun run dev:frontend
+```
+
+4. Carga datos de desarrollo:
+
+```bash
+DATABASE_URL=postgres://procomeka:procomeka@localhost:5432/procomeka \
+bun run --filter '@procomeka/cli' cli -- seed
+```
+
+Servicios resultantes:
+
+- Frontend: `http://localhost:4321`
+- API: `http://localhost:3000`
+- PostgreSQL: `postgres://procomeka:procomeka@localhost:5432/procomeka`
+
+#### Notas importantes
+
+- Si defines `DATABASE_URL`, la API deja de usar PGlite y pasa a usar PostgreSQL real.
+- Para desarrollo con frontend local, `FRONTEND_URL` y `BETTER_AUTH_URL` deben seguir apuntando a `http://localhost:4321`.
+- El `docker-compose.yml` actual está orientado a backend/API; no sustituye a un entorno dockerizado completo de frontend + backend.
+
 ### Preview estático para PRs
 
 Cada Pull Request publica automáticamente un preview en GitHub Pages usando PGlite WASM en el navegador. El preview:
