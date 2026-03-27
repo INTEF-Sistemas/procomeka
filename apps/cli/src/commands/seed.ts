@@ -16,6 +16,12 @@ function getResultLength(result: SeedQueryResult) {
 	return Array.isArray(result) ? result.length : result.rows?.length ?? 0;
 }
 
+export function formatPostgresSeedTarget(databaseUrl: string) {
+	const url = new URL(databaseUrl);
+	const databaseName = url.pathname.replace(/^\//, "") || "(default)";
+	return `Base PostgreSQL: ${url.hostname}:${url.port || "5432"}/${databaseName}`;
+}
+
 export async function seedWithClient(
 	client: SeedClient,
 	options: { now?: string; log?: SeedLog; successTarget: string },
@@ -113,6 +119,6 @@ async function seedPostgres(databaseUrl: string) {
 			query: (statement, params) => sql.unsafe(statement, params),
 			close: () => sql.end(),
 		},
-		{ now, successTarget: `Base PostgreSQL: ${databaseUrl}` },
+		{ now, successTarget: formatPostgresSeedTarget(databaseUrl) },
 	);
 }

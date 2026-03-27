@@ -102,7 +102,7 @@ seed:
 
 up-postgres: deps
 	@echo "Levantando PostgreSQL en Docker para desarrollo local..."
-	@docker compose up -d db
+	@docker compose up -d --wait db
 	@echo "Ejecutando seed sobre PostgreSQL real..."
 	@DATABASE_URL="postgres://procomeka:procomeka@localhost:5432/procomeka" \
 		$(BUN) run --filter '@procomeka/cli' cli -- seed

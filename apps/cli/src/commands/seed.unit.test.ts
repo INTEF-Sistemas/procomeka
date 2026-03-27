@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { DEV_RESOURCES, DEV_USERS } from "@procomeka/db/seed-data";
-import { resolveSeedMode, seedWithClient } from "./seed.ts";
+import { formatPostgresSeedTarget, resolveSeedMode, seedWithClient } from "./seed.ts";
 
 describe("resolveSeedMode", () => {
 	test("usa postgres si DATABASE_URL está definida", () => {
@@ -9,6 +9,14 @@ describe("resolveSeedMode", () => {
 
 	test("usa pglite si DATABASE_URL no está definida", () => {
 		expect(resolveSeedMode({})).toBe("pglite");
+	});
+});
+
+describe("formatPostgresSeedTarget", () => {
+	test("redacta credenciales y conserva host, puerto y base de datos", () => {
+		expect(formatPostgresSeedTarget("postgres://user:secret@db.example.com:6543/procomeka")).toBe(
+			"Base PostgreSQL: db.example.com:6543/procomeka",
+		);
 	});
 });
 
