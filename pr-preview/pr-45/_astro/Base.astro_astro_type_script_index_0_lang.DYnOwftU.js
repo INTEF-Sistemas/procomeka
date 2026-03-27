@@ -1,1 +1,0 @@
-import{g as n}from"./get-api-client.w_qaBL6_.js";import"./preload-helper.CPZg4Qqv.js";const s=document.getElementById("nav-login"),e=document.getElementById("nav-user");(async()=>{try{const t=await(await n()).getSession();t?.user&&(s.style.display="none",e.textContent=t.user.email,e.style.display="")}catch{}})();
