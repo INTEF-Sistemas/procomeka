@@ -1,0 +1,104 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+---
+
+<AdminLayout title="Categorías" activeSection="taxonomies">
+	<section class="page-head">
+		<div>
+			<p class="eyebrow">CRUD</p>
+			<h1>Categorías y taxonomías</h1>
+		</div>
+	</section>
+
+	<section class="form-card">
+		<h2>Nueva categoría</h2>
+		<form id="taxonomy-form">
+			<div class="form-grid">
+				<label><span>Nombre</span><input id="taxonomy-name" required /></label>
+				<label><span>Slug</span><input id="taxonomy-slug" /></label>
+				<label><span>Tipo</span><input id="taxonomy-type" value="category" /></label>
+			</div>
+			<button type="submit">Guardar categoría</button>
+		</form>
+	</section>
+
+	<div class="table-wrap">
+		<table>
+			<thead><tr><th>Nombre</th><th>Slug</th><th>Tipo</th><th>Acciones</th></tr></thead>
+			<tbody id="taxonomy-body"></tbody>
+		</table>
+	</div>
+</AdminLayout>
+
+<script>
+	import { getApiClient } from "../../../lib/get-api-client.ts";
+	import { url } from "../../../lib/paths.ts";
+
+	const body = document.getElementById("taxonomy-body") as HTMLTableSectionElement;
+	const form = document.getElementById("taxonomy-form") as HTMLFormElement;
+
+	async function loadTaxonomies() {
+		const api = await getApiClient();
+		const result = await api.listTaxonomies({ limit: 100, offset: 0 });
+		body.innerHTML = result.data.map((taxonomy) => `
+			<tr>
+				<td><input data-name-id="${taxonomy.id}" value="${taxonomy.name}" /></td>
+				<td><input data-slug-id="${taxonomy.id}" value="${taxonomy.slug}" /></td>
+				<td><input data-type-id="${taxonomy.id}" value="${taxonomy.type}" /></td>
+				<td>
+					<button type="button" data-save-id="${taxonomy.id}">Guardar</button>
+					<button type="button" data-delete-id="${taxonomy.id}">Eliminar</button>
+				</td>
+			</tr>
+		`).join("");
+
+		body.querySelectorAll("[data-save-id]").forEach((button) => {
+			button.addEventListener("click", async () => {
+				const id = (button as HTMLButtonElement).dataset.saveId!;
+				await api.updateTaxonomy(id, {
+					name: (body.querySelector(`[data-name-id="${id}"]`) as HTMLInputElement).value,
+					slug: (body.querySelector(`[data-slug-id="${id}"]`) as HTMLInputElement).value,
+					type: (body.querySelector(`[data-type-id="${id}"]`) as HTMLInputElement).value,
+				});
+				loadTaxonomies();
+			});
+		});
+
+		body.querySelectorAll("[data-delete-id]").forEach((button) => {
+			button.addEventListener("click", async () => {
+				const id = (button as HTMLButtonElement).dataset.deleteId!;
+				if (!confirm("¿Eliminar esta categoría?")) return;
+				await api.deleteTaxonomy(id);
+				loadTaxonomies();
+			});
+		});
+	}
+
+	form.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		const api = await getApiClient();
+		await api.createTaxonomy({
+			name: (document.getElementById("taxonomy-name") as HTMLInputElement).value,
+			slug: (document.getElementById("taxonomy-slug") as HTMLInputElement).value || undefined,
+			type: (document.getElementById("taxonomy-type") as HTMLInputElement).value || "category",
+		});
+		form.reset();
+		(document.getElementById("taxonomy-type") as HTMLInputElement).value = "category";
+		loadTaxonomies();
+	});
+
+	loadTaxonomies().catch(() => {
+		window.location.href = url("login");
+	});
+</script>
+
+<style>
+	.eyebrow { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #2b6cb0; font-weight: 700; }
+	.form-card, .table-wrap { border: 1px solid #e2e8f0; border-radius: 12px; background: white; padding: 1rem; margin-top: 1rem; }
+	.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+	label span { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.2rem; }
+	input, button { padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid #cbd5e0; }
+	button { cursor: pointer; margin-top: 0.75rem; }
+	table { width: 100%; border-collapse: collapse; }
+	th, td { padding: 0.85rem; border-bottom: 1px solid #edf2f7; text-align: left; }
+</style>

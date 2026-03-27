@@ -1,0 +1,160 @@
+---
+import Base from "./Base.astro";
+import { BACKOFFICE_SECTIONS } from "../lib/backoffice-nav.ts";
+
+interface Props {
+	title: string;
+	activeSection?: string;
+}
+
+const { title, activeSection = "dashboard" } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+<Base title={title}>
+	<div class="admin-shell">
+		<button class="admin-nav-toggle" type="button" aria-expanded="false" aria-controls="admin-sidebar">
+			Menú
+		</button>
+		<aside id="admin-sidebar" class="admin-sidebar" aria-label="Navegación del backoffice">
+			<p class="admin-sidebar-title">Backoffice</p>
+			<nav>
+				<ul class="admin-nav-list">
+					{BACKOFFICE_SECTIONS.map((section) => (
+						<li data-nav-item data-min-role={section.minRole}>
+							<a
+								href={`${base}${section.href}`}
+								data-nav-link
+								data-section-id={section.id}
+								class={section.id === activeSection ? "is-active" : undefined}
+							>
+								{section.label}
+							</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+		</aside>
+		<section class="admin-content">
+			<slot />
+		</section>
+	</div>
+</Base>
+
+<script>
+	import { getApiClient } from "../lib/get-api-client.ts";
+	import { canAccessSection } from "../lib/backoffice-nav.ts";
+	import { url } from "../lib/paths.ts";
+
+	const toggle = document.querySelector(".admin-nav-toggle") as HTMLButtonElement | null;
+	const sidebar = document.getElementById("admin-sidebar");
+	toggle?.addEventListener("click", () => {
+		const expanded = toggle.getAttribute("aria-expanded") === "true";
+		toggle.setAttribute("aria-expanded", String(!expanded));
+		sidebar?.classList.toggle("is-open", !expanded);
+	});
+
+	(async () => {
+		const api = await getApiClient();
+		const session = await api.getSession();
+		const role = session?.user?.role ?? "reader";
+
+		document.querySelectorAll("[data-nav-item]").forEach((item) => {
+			const minRole = (item as HTMLElement).dataset.minRole as "author" | "curator" | "admin";
+			if (!canAccessSection(role, minRole)) {
+				(item as HTMLElement).style.display = "none";
+			}
+		});
+
+		if (role === "reader") {
+			window.location.href = url("login");
+		}
+	})().catch(() => {
+		window.location.href = url("login");
+	});
+</script>
+
+<style>
+	.admin-shell {
+		display: grid;
+		grid-template-columns: 240px minmax(0, 1fr);
+		gap: 1.5rem;
+		align-items: start;
+	}
+
+	.admin-nav-toggle {
+		display: none;
+	}
+
+	.admin-sidebar {
+		border: 1px solid #d8dee9;
+		border-radius: 14px;
+		padding: 1rem;
+		background: linear-gradient(180deg, #f7fafc 0%, #edf2f7 100%);
+		position: sticky;
+		top: 1rem;
+	}
+
+	.admin-sidebar-title {
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #4a5568;
+		margin-bottom: 0.75rem;
+		font-weight: 700;
+	}
+
+	.admin-nav-list {
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.admin-nav-list a {
+		display: block;
+		padding: 0.7rem 0.8rem;
+		border-radius: 10px;
+		text-decoration: none;
+		color: #2d3748;
+		font-weight: 600;
+	}
+
+	.admin-nav-list a:hover,
+	.admin-nav-list a.is-active {
+		background: #1a365d;
+		color: white;
+	}
+
+	.admin-content {
+		min-width: 0;
+	}
+
+	@media (max-width: 900px) {
+		.admin-shell {
+			grid-template-columns: 1fr;
+		}
+
+		.admin-nav-toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: fit-content;
+			padding: 0.65rem 0.9rem;
+			border: 1px solid #cbd5e0;
+			border-radius: 10px;
+			background: white;
+			font-weight: 600;
+			margin-bottom: 0.75rem;
+		}
+
+		.admin-sidebar {
+			display: none;
+			position: static;
+		}
+
+		.admin-sidebar.is-open {
+			display: block;
+		}
+	}
+</style>

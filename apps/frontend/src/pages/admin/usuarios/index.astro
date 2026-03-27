@@ -1,0 +1,101 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+---
+
+<AdminLayout title="Usuarios" activeSection="users">
+	<section class="page-head">
+		<div>
+			<p class="eyebrow">CRUD</p>
+			<h1>Usuarios</h1>
+			<p class="helper">El administrador puede filtrar y editar roles. El resto de perfiles solo ve su propia ficha.</p>
+		</div>
+	</section>
+
+	<section class="toolbar">
+		<label>
+			<span>Búsqueda</span>
+			<input id="search" type="search" placeholder="Nombre o email" />
+		</label>
+		<label>
+			<span>Rol</span>
+			<select id="role-filter">
+				<option value="">Todos</option>
+				<option value="reader">Reader</option>
+				<option value="author">Author</option>
+				<option value="curator">Curator</option>
+				<option value="admin">Admin</option>
+			</select>
+		</label>
+		<button id="apply-filters" type="button">Aplicar</button>
+	</section>
+
+	<div id="users-status" aria-live="polite"></div>
+	<div class="table-wrap">
+		<table>
+			<thead>
+				<tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acción</th></tr>
+			</thead>
+			<tbody id="users-body"></tbody>
+		</table>
+	</div>
+</AdminLayout>
+
+<script>
+	import { getApiClient } from "../../../lib/get-api-client.ts";
+	import { url } from "../../../lib/paths.ts";
+
+	const tbody = document.getElementById("users-body") as HTMLTableSectionElement;
+	const statusBox = document.getElementById("users-status") as HTMLDivElement;
+	const searchInput = document.getElementById("search") as HTMLInputElement;
+	const roleFilter = document.getElementById("role-filter") as HTMLSelectElement;
+
+	async function loadUsers() {
+		const api = await getApiClient();
+		const result = await api.listUsers({ q: searchInput.value || undefined, role: roleFilter.value || undefined, limit: 50, offset: 0 });
+		statusBox.textContent = `${result.total} usuarios visibles`;
+		tbody.innerHTML = result.data.map((user) => `
+			<tr>
+				<td><input data-name-id="${user.id}" value="${user.name ?? ""}" /></td>
+				<td>${user.email}</td>
+				<td>
+					<select data-role-id="${user.id}">
+						<option value="reader" ${user.role === "reader" ? "selected" : ""}>reader</option>
+						<option value="author" ${user.role === "author" ? "selected" : ""}>author</option>
+						<option value="curator" ${user.role === "curator" ? "selected" : ""}>curator</option>
+						<option value="admin" ${user.role === "admin" ? "selected" : ""}>admin</option>
+					</select>
+				</td>
+				<td>${user.isActive ? "Activo" : "Inactivo"}</td>
+				<td><button type="button" data-save-id="${user.id}">Guardar</button></td>
+			</tr>
+		`).join("");
+
+		tbody.querySelectorAll("[data-save-id]").forEach((button) => {
+			button.addEventListener("click", async () => {
+				const id = (button as HTMLButtonElement).dataset.saveId!;
+				const name = (tbody.querySelector(`[data-name-id="${id}"]`) as HTMLInputElement)?.value ?? "";
+				const role = (tbody.querySelector(`[data-role-id="${id}"]`) as HTMLSelectElement)?.value ?? "reader";
+				await api.updateUser(id, { name, role });
+				loadUsers();
+			});
+		});
+	}
+
+	document.getElementById("apply-filters")?.addEventListener("click", () => loadUsers());
+
+	loadUsers().catch(() => {
+		window.location.href = url("login");
+	});
+</script>
+
+<style>
+	.eyebrow { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #2b6cb0; font-weight: 700; }
+	.helper { color: #4a5568; max-width: 60ch; }
+	.toolbar { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0 1rem; align-items: end; }
+	label span { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.2rem; }
+	input, select, button { padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid #cbd5e0; }
+	button { cursor: pointer; }
+	.table-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: white; margin-top: 1rem; }
+	table { width: 100%; border-collapse: collapse; }
+	th, td { padding: 0.85rem; border-bottom: 1px solid #edf2f7; text-align: left; }
+</style>

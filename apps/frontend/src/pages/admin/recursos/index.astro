@@ -1,0 +1,164 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+const base = import.meta.env.BASE_URL;
+---
+
+<AdminLayout title="Recursos" activeSection="resources">
+	<section class="page-head">
+		<div>
+			<p class="eyebrow">CRUD</p>
+			<h1>Recursos</h1>
+		</div>
+		<a class="primary-link" href={`${base}admin/recursos/nuevo`}>Nuevo recurso</a>
+	</section>
+
+	<section class="toolbar">
+		<label>
+			<span>Búsqueda</span>
+			<input id="search" type="search" placeholder="Título, descripción o autor" />
+		</label>
+		<label>
+			<span>Estado</span>
+			<select id="status-filter">
+				<option value="">Todos</option>
+				<option value="draft">Borrador</option>
+				<option value="review">En revisión</option>
+				<option value="published">Publicado</option>
+				<option value="archived">Archivado</option>
+			</select>
+		</label>
+		<button id="apply-filters" type="button">Aplicar</button>
+	</section>
+
+	<div id="list-status" class="list-status" aria-live="polite"></div>
+	<div class="table-wrap">
+		<table>
+			<thead>
+				<tr>
+					<th>Título</th>
+					<th>Autoría</th>
+					<th>Estado</th>
+					<th>Actualizado</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody id="resources-body"></tbody>
+		</table>
+	</div>
+	<div class="pager">
+		<button id="prev-page" type="button">Anterior</button>
+		<span id="page-label">Página 1</span>
+		<button id="next-page" type="button">Siguiente</button>
+	</div>
+</AdminLayout>
+
+<script>
+	import { getApiClient } from "../../../lib/get-api-client.ts";
+	import { url } from "../../../lib/paths.ts";
+
+	const tbody = document.getElementById("resources-body") as HTMLTableSectionElement;
+	const statusBox = document.getElementById("list-status") as HTMLDivElement;
+	const pageLabel = document.getElementById("page-label") as HTMLSpanElement;
+	const prevBtn = document.getElementById("prev-page") as HTMLButtonElement;
+	const nextBtn = document.getElementById("next-page") as HTMLButtonElement;
+	const searchInput = document.getElementById("search") as HTMLInputElement;
+	const statusFilter = document.getElementById("status-filter") as HTMLSelectElement;
+
+	let offset = 0;
+	const limit = 10;
+	let total = 0;
+
+	async function loadResources() {
+		statusBox.textContent = "Cargando recursos…";
+		const api = await getApiClient();
+		const result = await api.listAdminResources({
+			q: searchInput.value || undefined,
+			limit,
+			offset,
+			status: statusFilter.value || undefined,
+		});
+		total = result.total;
+		pageLabel.textContent = `Página ${Math.floor(offset / limit) + 1}`;
+		prevBtn.disabled = offset === 0;
+		nextBtn.disabled = offset + limit >= total;
+
+		if (!result.data.length) {
+			tbody.innerHTML = `<tr><td colspan="5">No hay recursos para los filtros actuales.</td></tr>`;
+			statusBox.textContent = `${total} recursos visibles`;
+			return;
+		}
+
+		tbody.innerHTML = result.data.map((resource) => `
+			<tr>
+				<td>${resource.title}</td>
+				<td>${resource.createdByName ?? resource.author ?? "Sin autoría"}</td>
+				<td>${resource.editorialStatus}</td>
+				<td>${resource.updatedAt ? new Date(resource.updatedAt).toLocaleDateString("es-ES") : "-"}</td>
+				<td>
+					<a href="${url(`admin/recursos/editar?id=${resource.id}`)}">Editar</a>
+					<button type="button" data-delete-id="${resource.id}">Eliminar</button>
+				</td>
+			</tr>
+		`).join("");
+
+		tbody.querySelectorAll("[data-delete-id]").forEach((button) => {
+			button.addEventListener("click", async () => {
+				const id = (button as HTMLButtonElement).dataset.deleteId;
+				if (!id) return;
+				if (!confirm("¿Eliminar este recurso?")) return;
+				const api = await getApiClient();
+				await api.deleteResource(id);
+				loadResources();
+			});
+		});
+
+		statusBox.textContent = `${total} recursos visibles`;
+	}
+
+	document.getElementById("apply-filters")?.addEventListener("click", () => {
+		offset = 0;
+		loadResources();
+	});
+	prevBtn.addEventListener("click", () => {
+		offset = Math.max(0, offset - limit);
+		loadResources();
+	});
+	nextBtn.addEventListener("click", () => {
+		offset += limit;
+		loadResources();
+	});
+
+	loadResources().catch(() => {
+		window.location.href = url("login");
+	});
+</script>
+
+<style>
+	.page-head, .toolbar, .pager {
+		display: flex;
+		gap: 1rem;
+		align-items: end;
+		justify-content: space-between;
+		flex-wrap: wrap;
+	}
+
+	.eyebrow { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #2b6cb0; font-weight: 700; }
+	.primary-link {
+		background: #1a365d;
+		color: white;
+		padding: 0.7rem 1rem;
+		border-radius: 10px;
+		text-decoration: none;
+		font-weight: 600;
+	}
+
+	.toolbar { margin: 1.5rem 0 1rem; }
+	label span { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.2rem; }
+	input, select, button { padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid #cbd5e0; }
+	button { cursor: pointer; }
+	.table-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
+	table { width: 100%; border-collapse: collapse; }
+	th, td { padding: 0.85rem; border-bottom: 1px solid #edf2f7; text-align: left; }
+	.list-status { color: #4a5568; margin-bottom: 0.75rem; }
+	.pager { margin-top: 1rem; }
+</style>

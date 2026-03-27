@@ -217,6 +217,34 @@ describe("Rutas admin — con sesión de admin", () => {
 		const res = await app.request("/api/admin/users");
 		expect(res.status).toBe(200);
 	});
+
+	test("POST /api/admin/collections → 201 y GET /api/admin/collections → lista", async () => {
+		const createRes = await app.request("/api/admin/collections", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ title: "Colección demo", description: "Descripción de colección" }),
+		});
+		expect(createRes.status).toBe(201);
+
+		const listRes = await app.request("/api/admin/collections");
+		expect(listRes.status).toBe(200);
+		const body = await listRes.json();
+		expect(body.total).toBeGreaterThan(0);
+	});
+
+	test("POST /api/admin/taxonomies → 201 y GET /api/admin/taxonomies → lista", async () => {
+		const createRes = await app.request("/api/admin/taxonomies", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name: "Matemáticas", type: "subject" }),
+		});
+		expect(createRes.status).toBe(201);
+
+		const listRes = await app.request("/api/admin/taxonomies");
+		expect(listRes.status).toBe(200);
+		const body = await listRes.json();
+		expect(body.total).toBeGreaterThan(0);
+	});
 });
 
 describe("Rutas admin — RBAC por rol", () => {
@@ -230,10 +258,16 @@ describe("Rutas admin — RBAC por rol", () => {
 		expect(res.status).toBe(201);
 	});
 
-	test("author no puede eliminar recursos", async () => {
+	test("author puede eliminar recursos propios", async () => {
 		const app = createAdminApp({ id: "1", role: "author" });
-		const res = await app.request("/api/admin/resources/res-1", { method: "DELETE" });
-		expect(res.status).toBe(403);
+		const createRes = await app.request("/api/admin/resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(validResource),
+		});
+		const created = await createRes.json();
+		const res = await app.request(`/api/admin/resources/${created.id}`, { method: "DELETE" });
+		expect(res.status).toBe(200);
 	});
 
 	test("reader no puede crear recursos", async () => {
@@ -316,6 +350,42 @@ describe("Rutas admin — RBAC por rol", () => {
 	test("solo admin puede gestionar usuarios", async () => {
 		const app = createAdminApp({ id: "1", role: "curator" });
 		const res = await app.request("/api/admin/users");
-		expect(res.status).toBe(403);
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.total).toBe(1);
+	});
+
+	test("curator puede listar taxonomías pero no crearlas", async () => {
+		const app = createAdminApp({ id: "1", role: "curator" });
+		const listRes = await app.request("/api/admin/taxonomies");
+		expect(listRes.status).toBe(200);
+
+		const createRes = await app.request("/api/admin/taxonomies", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name: "Lengua" }),
+		});
+		expect(createRes.status).toBe(403);
+	});
+
+	test("author solo ve sus recursos en listado", async () => {
+		const adminApp = createAdminApp({ id: "admin-1", role: "admin" });
+		await adminApp.request("/api/admin/resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ ...validResource, title: "Recurso admin" }),
+		});
+
+		const authorApp = createAdminApp({ id: "author-1", role: "author" });
+		await authorApp.request("/api/admin/resources", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ ...validResource, title: "Recurso author" }),
+		});
+
+		const res = await authorApp.request("/api/admin/resources");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data.every((item: { createdBy: string | null }) => item.createdBy === "author-1")).toBe(true);
 	});
 });

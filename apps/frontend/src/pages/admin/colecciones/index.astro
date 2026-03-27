@@ -1,0 +1,112 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+---
+
+<AdminLayout title="Colecciones" activeSection="collections">
+	<section class="page-head">
+		<div>
+			<p class="eyebrow">CRUD</p>
+			<h1>Colecciones</h1>
+		</div>
+	</section>
+
+	<section class="form-card">
+		<h2>Nueva colección</h2>
+		<form id="collection-form">
+			<div class="form-grid">
+				<label><span>Título</span><input id="collection-title" required /></label>
+				<label class="full"><span>Descripción</span><textarea id="collection-description" rows="3" required></textarea></label>
+			</div>
+			<label class="checkbox"><input id="collection-ordered" type="checkbox" /> Orden fija</label>
+			<button type="submit">Guardar colección</button>
+		</form>
+	</section>
+
+	<div class="table-wrap">
+		<table>
+			<thead><tr><th>Título</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
+			<tbody id="collections-body"></tbody>
+		</table>
+	</div>
+</AdminLayout>
+
+<script>
+	import { getApiClient } from "../../../lib/get-api-client.ts";
+	import { url } from "../../../lib/paths.ts";
+
+	const form = document.getElementById("collection-form") as HTMLFormElement;
+	const body = document.getElementById("collections-body") as HTMLTableSectionElement;
+
+	async function loadCollections() {
+		const api = await getApiClient();
+		const result = await api.listCollections({ limit: 100, offset: 0 });
+		body.innerHTML = result.data.map((collection) => `
+			<tr>
+				<td><input data-title-id="${collection.id}" value="${collection.title}" /></td>
+				<td><textarea data-description-id="${collection.id}" rows="2">${collection.description}</textarea></td>
+				<td>
+					<select data-status-id="${collection.id}">
+						<option value="draft" ${collection.editorialStatus === "draft" ? "selected" : ""}>draft</option>
+						<option value="review" ${collection.editorialStatus === "review" ? "selected" : ""}>review</option>
+						<option value="published" ${collection.editorialStatus === "published" ? "selected" : ""}>published</option>
+						<option value="archived" ${collection.editorialStatus === "archived" ? "selected" : ""}>archived</option>
+					</select>
+				</td>
+				<td>
+					<button type="button" data-save-id="${collection.id}">Guardar</button>
+					<button type="button" data-delete-id="${collection.id}">Eliminar</button>
+				</td>
+			</tr>
+		`).join("");
+
+		body.querySelectorAll("[data-save-id]").forEach((button) => {
+			button.addEventListener("click", async () => {
+				const id = (button as HTMLButtonElement).dataset.saveId!;
+				await api.updateCollection(id, {
+					title: (body.querySelector(`[data-title-id="${id}"]`) as HTMLInputElement).value,
+					description: (body.querySelector(`[data-description-id="${id}"]`) as HTMLTextAreaElement).value,
+					editorialStatus: (body.querySelector(`[data-status-id="${id}"]`) as HTMLSelectElement).value,
+				});
+				loadCollections();
+			});
+		});
+
+		body.querySelectorAll("[data-delete-id]").forEach((button) => {
+			button.addEventListener("click", async () => {
+				const id = (button as HTMLButtonElement).dataset.deleteId!;
+				if (!confirm("¿Eliminar esta colección?")) return;
+				await api.deleteCollection(id);
+				loadCollections();
+			});
+		});
+	}
+
+	form.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		const api = await getApiClient();
+		await api.createCollection({
+			title: (document.getElementById("collection-title") as HTMLInputElement).value,
+			description: (document.getElementById("collection-description") as HTMLTextAreaElement).value,
+			isOrdered: (document.getElementById("collection-ordered") as HTMLInputElement).checked,
+		});
+		form.reset();
+		loadCollections();
+	});
+
+	loadCollections().catch(() => {
+		window.location.href = url("login");
+	});
+</script>
+
+<style>
+	.eyebrow { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #2b6cb0; font-weight: 700; }
+	.form-card, .table-wrap { border: 1px solid #e2e8f0; border-radius: 12px; background: white; padding: 1rem; margin-top: 1rem; }
+	.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+	.full { grid-column: 1 / -1; }
+	label span { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.2rem; }
+	input, textarea, select, button { padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid #cbd5e0; }
+	button { cursor: pointer; margin-top: 0.75rem; }
+	.checkbox { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+	table { width: 100%; border-collapse: collapse; }
+	th, td { padding: 0.85rem; border-bottom: 1px solid #edf2f7; text-align: left; }
+</style>

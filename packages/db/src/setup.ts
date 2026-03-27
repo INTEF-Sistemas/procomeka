@@ -125,9 +125,20 @@ export async function createTables(pglite: { exec: (sql: string) => Promise<unkn
 			position INTEGER NOT NULL DEFAULT 0
 		);
 
+		CREATE TABLE IF NOT EXISTS "taxonomies" (
+			id TEXT PRIMARY KEY,
+			slug VARCHAR(255) NOT NULL UNIQUE,
+			name TEXT NOT NULL,
+			type VARCHAR(100) NOT NULL DEFAULT 'category',
+			parent_id TEXT,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+
 		CREATE INDEX IF NOT EXISTS idx_resources_slug ON resources(slug);
 		CREATE INDEX IF NOT EXISTS idx_resources_status ON resources(editorial_status);
 		CREATE INDEX IF NOT EXISTS idx_resources_type ON resources(resource_type);
+		CREATE INDEX IF NOT EXISTS idx_taxonomies_type ON taxonomies(type);
 
 		-- Migration: add created_by column if missing (added after initial schema)
 		DO $$ BEGIN

@@ -1,8 +1,8 @@
 ---
-import Base from "../../../layouts/Base.astro";
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 ---
 
-<Base title="Crear recurso">
+<AdminLayout title="Crear recurso" activeSection="resources">
 	<div class="form-container">
 		<h1>Crear recurso</h1>
 
@@ -84,7 +84,7 @@ import Base from "../../../layouts/Base.astro";
 			<button type="submit" id="submit-btn">Crear recurso</button>
 		</form>
 	</div>
-</Base>
+</AdminLayout>
 
 <script>
 	import { getApiClient } from "../../../lib/get-api-client.ts";

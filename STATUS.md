@@ -214,6 +214,32 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 |-------|--------|---------------------|--------|
 | 2026-03-27 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/backend-api-servicios` | Hotfix del endpoint dev de seed: detección robusta de entorno con Bun + tests unitarios específicos | Completado |
 
+## Actualización 2026-03-27 (Backoffice: navegación y CRUD mínimos)
+
+- **Agente en turno:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/backend-api-servicios/SKILL.md` + `@.agents/skills/qa-validacion/SKILL.md`
+- **Acción realizada:** Se implementa un backoffice navegable con sidebar persistente y CRUD mínimos para recursos, usuarios, categorías/taxonomías y colecciones, con visibilidad por rol y contratos reales de API/preview.
+- **Cambios aplicados:**
+  - Nuevo `AdminLayout` con navegación responsive y accesible por rol.
+  - Nuevas vistas de backoffice: panel, listado de recursos, usuarios, categorías y colecciones.
+  - Recursos mantienen alta/edición y añaden listado paginado y filtrado.
+  - API admin ampliada con endpoints reales para usuarios, colecciones y taxonomías, más RBAC por rol y filtros de visibilidad para recursos.
+  - `ApiClient`, `HttpApiClient` y `PreviewApiClient` ampliados para soportar el nuevo backoffice.
+  - `packages/db` ampliado con esquema de taxonomías y repositorios para usuarios, colecciones y taxonomías.
+  - Tests añadidos/actualizados para navegación del backoffice y rutas admin.
+- **Validación:**
+  - `cd apps/api && bun test src/routes/admin.unit.test.ts`
+  - `cd apps/frontend && bun test src/lib/backoffice-nav.unit.test.ts`
+  - `cd apps/frontend && bun run build`
+- **Riesgos abiertos:**
+  - Las vistas de usuarios, categorías y colecciones usan edición inline mínima; no existe aún un formulario dedicado por ruta para todas las entidades.
+  - La búsqueda de recursos combina filtrado servidor para `q/status` con una UI todavía básica; faltan ordenación avanzada y filtros más ricos.
+  - No se han añadido tests E2E del sidebar y de los flujos CRUD en navegador; la cobertura actual valida contratos y visibilidad base, no el recorrido visual completo.
+- **Traspaso recomendado:** `@.agents/skills/qa-validacion/SKILL.md` para ampliar cobertura E2E y `@.agents/skills/documentacion-y-roadmap/SKILL.md` para reflejar el estado del backoffice en épicas/roadmap.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-27 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/backend-api-servicios` + `@.agents/skills/qa-validacion` | Backoffice con sidebar responsive y CRUD mínimos para recursos, usuarios, categorías y colecciones; API y clientes alineados | Completado |
+
 ## Actualización 2026-03-26 (Flujo editorial de recursos)
 
 - **Agente en turno:** `@.agents/skills/backend-api-servicios/SKILL.md` + `@.agents/skills/frontend-ux-accesibilidad/SKILL.md`
