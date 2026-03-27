@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "/app",
@@ -28,6 +29,7 @@
         "@electric-sql/pglite": "^0.2.17",
         "@procomeka/db": "workspace:*",
         "better-auth": "^1.5.0",
+        "postgres": "^3.4.8",
       },
     },
     "apps/frontend": {

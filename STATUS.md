@@ -265,3 +265,24 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-26 | `@.agents/skills/backend-api-servicios` + `@.agents/skills/frontend-ux-accesibilidad` | Flujo editorial completo: transiciones por rol, stepper visual, campo createdBy, botón editar en ficha pública | Completado |
+
+## Actualización 2026-03-27 (Cobertura mínima de tests)
+
+- **Agente en turno:** `@.agents/skills/backend-api-servicios/SKILL.md` + `@.agents/skills/qa-validacion/SKILL.md`
+- **Acción realizada:** Se sube la cobertura de líneas por encima del umbral mínimo del 90% tras la regresión introducida por el soporte de seed sobre PostgreSQL real.
+- **Cambios aplicados:**
+  - Refactor del flujo común de seed en `apps/cli/src/commands/seed.ts` para concentrar la lógica en un helper testeable y reutilizable por PGlite y PostgreSQL.
+  - Tests unitarios ampliados en `apps/cli/src/commands/seed.unit.test.ts` para inserción completa, omisión de duplicados y cierre correcto del cliente ante error.
+  - Nueva suite `packages/db/src/repository.unit.test.ts` para cubrir usuarios, colecciones y taxonomías sobre PGlite real.
+- **Validación:**
+  - `cd apps/cli && bun test src/commands/seed.unit.test.ts`
+  - `env -u DATABASE_URL bun run check-coverage`
+- **Resultado:**
+  - `158 pass, 0 fail`
+  - Cobertura de líneas: `91.07%`
+- **Riesgos abiertos:**
+  - `apps/api/src/routes/admin.ts` sigue siendo el principal punto ciego de cobertura por ramas; no bloquea el umbral actual, pero conviene seguir ampliándolo si se endurece la política.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-27 | `@.agents/skills/backend-api-servicios` + `@.agents/skills/qa-validacion` | Refuerzo de cobertura con tests del seed CLI y del repositorio compartido; cobertura total recuperada a 91.07% | Completado |
