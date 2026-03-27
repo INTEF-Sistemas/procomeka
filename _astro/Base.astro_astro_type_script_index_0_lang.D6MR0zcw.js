@@ -1,0 +1,1 @@
+import{g as n}from"./get-api-client.BxW6SfqO.js";import"./preload-helper.BKXYl-sz.js";const s=document.getElementById("nav-login"),e=document.getElementById("nav-user");(async()=>{try{const t=await(await n()).getSession();t?.user&&(s.style.display="none",e.textContent=t.user.email,e.style.display="")}catch{}})();
