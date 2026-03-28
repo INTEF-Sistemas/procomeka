@@ -11,6 +11,8 @@
 	"dependencies": {
 		"@electric-sql/pglite": "^0.2.17",
 		"@procomeka/db": "workspace:*",
+		"@tus/file-store": "^2.0.0",
+		"@tus/server": "^2.3.0",
 		"better-auth": "^1.5.6",
 		"drizzle-orm": "^0.44.0",
 		"hono": "^4.7.0"

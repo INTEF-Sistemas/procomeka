@@ -53,6 +53,23 @@ import Base from "../layouts/Base.astro";
 
 			const status = r.editorialStatus ?? "draft";
 			const statusLabel = STATUS_LABELS[status] ?? status;
+			const attachments = r.mediaItems?.length
+				? `
+					<section class="attachments">
+						<h2>Archivos</h2>
+						<ul class="attachment-list">
+							${r.mediaItems.map((item) => `
+								<li class="attachment-item">
+									<a href="${item.url}" class="attachment-link" download>
+										${item.filename ?? "Archivo adjunto"}
+									</a>
+									${item.fileSize ? `<span class="attachment-meta">${new Intl.NumberFormat("es-ES").format(item.fileSize)} bytes</span>` : ""}
+								</li>
+							`).join("")}
+						</ul>
+					</section>
+				`
+				: "";
 			container.innerHTML = `
 				<nav class="breadcrumb"><a href="${url("")}">Recursos</a> / ${r.title}</nav>
 				<div class="title-row">
@@ -71,6 +88,7 @@ import Base from "../layouts/Base.astro";
 				${r.keywords ? `<p class="field"><strong>Palabras clave:</strong> ${r.keywords}</p>` : ""}
 				${r.subjects?.length ? `<p class="field"><strong>Materias:</strong> ${r.subjects.join(", ")}</p>` : ""}
 				${r.levels?.length ? `<p class="field"><strong>Niveles:</strong> ${r.levels.join(", ")}</p>` : ""}
+				${attachments}
 			`;
 		} catch {
 			container.innerHTML = "<p>Error al cargar el recurso.</p>";
@@ -100,5 +118,12 @@ import Base from "../layouts/Base.astro";
 	.badge-archived { background: #e5e7eb; color: #374151; }
 	.description { font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; }
 	.field { margin: 0.25rem 0; font-size: 0.9rem; }
+	.attachments { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid #e5e7eb; }
+	.attachments h2 { margin: 0 0 0.75rem; font-size: 1.1rem; }
+	.attachment-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
+	.attachment-item { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: baseline; }
+	.attachment-link { color: #1a56db; font-weight: 600; text-decoration: none; }
+	.attachment-link:hover { text-decoration: underline; }
+	.attachment-meta { color: #6b7280; font-size: 0.85rem; }
 	.loading { color: #9ca3af; }
 </style>

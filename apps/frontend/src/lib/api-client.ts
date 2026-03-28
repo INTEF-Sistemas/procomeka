@@ -23,6 +23,7 @@ export interface Resource {
 	deletedAt: unknown;
 	subjects?: string[];
 	levels?: string[];
+	mediaItems?: MediaItemRecord[];
 }
 
 export interface ResourceListResult {
@@ -69,6 +70,51 @@ export interface PaginatedResult<T> {
 	total: number;
 	limit: number;
 	offset: number;
+}
+
+export interface MediaItemRecord {
+	id: string;
+	resourceId: string;
+	type: string;
+	mimeType?: string | null;
+	url: string;
+	fileSize?: number | null;
+	filename?: string | null;
+	isPrimary: number;
+}
+
+export interface UploadSessionRecord {
+	id: string;
+	resourceId: string;
+	ownerId: string;
+	mediaItemId?: string | null;
+	status: string;
+	originalFilename: string;
+	mimeType?: string | null;
+	storageKey: string;
+	publicUrl?: string | null;
+	checksumAlgorithm?: string | null;
+	finalChecksum?: string | null;
+	errorCode?: string | null;
+	errorMessage?: string | null;
+	declaredSize?: number | null;
+	receivedBytes: number;
+	expiresAt?: string | number | Date | null;
+	completedAt?: string | number | Date | null;
+	cancelledAt?: string | number | Date | null;
+	createdAt?: string | number | Date | null;
+	updatedAt?: string | number | Date | null;
+}
+
+export interface UploadConfig {
+	maxFileSizeBytes: number;
+	maxFilesPerBatch: number;
+	maxConcurrentPerUser: number;
+	chunkSizeBytes: number;
+	sessionTtlMs: number;
+	allowedMimeTypes: string[];
+	allowedExtensions: string[];
+	storageDir: string;
 }
 
 export interface SessionUser {
@@ -130,10 +176,14 @@ export interface ApiClient {
 	// Admin
 	listAdminResources(opts?: { q?: string; limit?: number; offset?: number; status?: string }): Promise<ResourceListResult>;
 	getResourceById(id: string): Promise<Resource | null>;
+	listResourceMediaItems(id: string): Promise<MediaItemRecord[]>;
+	listResourceUploads(id: string): Promise<UploadSessionRecord[]>;
 	createResource(data: CreateResourceInput): Promise<{ id: string; slug: string }>;
 	updateResource(id: string, data: UpdateResourceInput): Promise<{ ok: boolean; error?: string; details?: { field: string; message: string }[] }>;
 	updateResourceStatus(id: string, status: string): Promise<{ id: string; status: string }>;
 	deleteResource(id: string): Promise<void>;
+	getUploadConfig(): Promise<UploadConfig>;
+	cancelUpload(id: string): Promise<{ id: string; cancelled: boolean }>;
 
 	listUsers(opts?: { q?: string; role?: string; limit?: number; offset?: number }): Promise<PaginatedResult<UserRecord>>;
 	getUserById(id: string): Promise<UserRecord | null>;

@@ -141,6 +141,28 @@ Servicios resultantes:
 - Para desarrollo con frontend local, `FRONTEND_URL` y `BETTER_AUTH_URL` deben seguir apuntando a `http://localhost:4321`.
 - El `docker-compose.yml` actual está orientado a backend/API; no sustituye a un entorno dockerizado completo de frontend + backend.
 
+### Uploads resumables en backoffice
+
+El editor de recursos soporta subida resumable de archivos con cola multiarchivo sobre `/api/uploads`, persistencia de sesiones de upload y asociación automática a `media_items` al completarse la transferencia.
+
+Variables principales:
+
+- `UPLOAD_STORAGE_DIR`: directorio local/volumen donde se guardan los binarios
+- `UPLOAD_MAX_FILE_SIZE_BYTES`: límite por archivo
+- `UPLOAD_MAX_FILES_PER_BATCH`: máximo de archivos por lote
+- `UPLOAD_MAX_CONCURRENT_PER_USER`: concurrencia por usuario
+- `UPLOAD_CHUNK_SIZE_BYTES`: tamaño de chunk usado por el cliente
+- `UPLOAD_SESSION_TTL_MS`: expiración de uploads incompletos
+- `UPLOAD_ALLOWED_EXTENSIONS` / `UPLOAD_ALLOWED_MIME_TYPES`: allow-list operativa
+
+Notas:
+
+- El modo preview estático no soporta uploads reales.
+- Los uploads requieren sesión y permisos de edición sobre el recurso.
+- El storage inicial es disco local/volumen montado; la abstracción queda lista para evolucionar a otro backend.
+- Si `UPLOAD_STORAGE_DIR` es una ruta relativa, se resuelve respecto al directorio de trabajo del proceso de la API. Con el arranque habitual `bun run --filter '@procomeka/api' dev`, el valor por defecto `./local-data/uploads` termina en `apps/api/local-data/uploads`.
+- Si quieres que los binarios queden en otra ubicación estable del host o en la raíz del monorepo, define `UPLOAD_STORAGE_DIR` con una ruta absoluta.
+
 ### Preview estático para PRs
 
 Cada Pull Request publica automáticamente un preview en GitHub Pages usando PGlite WASM en el navegador. El preview:

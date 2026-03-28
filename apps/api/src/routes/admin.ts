@@ -19,6 +19,8 @@ import {
 } from "../resources/validation.ts";
 import { getDb } from "../db.ts";
 import * as repo from "@procomeka/db/repository";
+import { getUploadConfig } from "../uploads/config.ts";
+import { readUploadContent, terminateUpload } from "./uploads.ts";
 
 const adminRoutes = new Hono<AuthEnv>();
 
@@ -122,6 +124,98 @@ adminRoutes.get("/resources/:id", async (c) => {
 		return c.json({ error: "Permisos insuficientes" }, 403);
 	}
 	return c.json(resource);
+});
+
+adminRoutes.get("/resources/:id/media", async (c) => {
+	const user = getCurrentUser(c);
+	if (!hasMinRole(user.role, "author")) {
+		return c.json({ error: "Permisos insuficientes" }, 403);
+	}
+
+	const { id } = c.req.param();
+	const resource = await getResourceById(id);
+	if (!resource) {
+		return c.json({ error: "Recurso no encontrado" }, 404);
+	}
+	if (!canManageResource(user, resource)) {
+		return c.json({ error: "Permisos insuficientes" }, 403);
+	}
+
+	return c.json(await repo.listMediaItemsForResource(getDb().db, id));
+});
+
+adminRoutes.get("/resources/:id/uploads", async (c) => {
+	const user = getCurrentUser(c);
+	if (!hasMinRole(user.role, "author")) {
+		return c.json({ error: "Permisos insuficientes" }, 403);
+	}
+
+	const { id } = c.req.param();
+	const resource = await getResourceById(id);
+	if (!resource) {
+		return c.json({ error: "Recurso no encontrado" }, 404);
+	}
+	if (!canManageResource(user, resource)) {
+		return c.json({ error: "Permisos insuficientes" }, 403);
+	}
+
+	return c.json(await repo.listUploadSessionsForResource(getDb().db, id));
+});
+
+adminRoutes.get("/uploads/config", async (c) => c.json(getUploadConfig()));
+
+adminRoutes.get("/uploads/:id/content", async (c) => {
+	const user = getCurrentUser(c);
+	if (!hasMinRole(user.role, "author")) {
+		return c.json({ error: "Permisos insuficientes" }, 403);
+	}
+
+	const { id } = c.req.param();
+	const session = await repo.getUploadSessionById(getDb().db, id);
+	if (!session) {
+		return c.json({ error: "Upload no encontrado" }, 404);
+	}
+
+	const resource = await getResourceById(session.resourceId);
+	if (!resource) {
+		return c.json({ error: "Recurso no encontrado" }, 404);
+	}
+	if (!canManageResource(user, resource)) {
+		return c.json({ error: "Permisos insuficientes" }, 403);
+	}
+
+	const body = await readUploadContent(id);
+	return new Response(body, {
+		status: 200,
+		headers: {
+			"Content-Type": session.mimeType ?? "application/octet-stream",
+			"Content-Disposition": `inline; filename="${session.originalFilename}"`,
+		},
+	});
+});
+
+adminRoutes.delete("/uploads/:id", async (c) => {
+	const user = getCurrentUser(c);
+	if (!hasMinRole(user.role, "author")) {
+		return c.json({ error: "Permisos insuficientes" }, 403);
+	}
+
+	const { id } = c.req.param();
+	const session = await repo.getUploadSessionById(getDb().db, id);
+	if (!session) {
+		return c.json({ error: "Upload no encontrado" }, 404);
+	}
+
+	const resource = await getResourceById(session.resourceId);
+	if (!resource) {
+		return c.json({ error: "Recurso no encontrado" }, 404);
+	}
+	if (!canManageResource(user, resource)) {
+		return c.json({ error: "Permisos insuficientes" }, 403);
+	}
+
+	await terminateUpload(id, user);
+	return c.json({ id, cancelled: true });
 });
 
 adminRoutes.post("/resources", async (c) => {

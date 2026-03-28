@@ -9,6 +9,9 @@ import type {
 	UpdateResourceInput,
 	SessionUser,
 	UserRecord,
+	MediaItemRecord,
+	UploadSessionRecord,
+	UploadConfig,
 } from "./api-client.ts";
 
 interface SeedData {
@@ -237,6 +240,14 @@ export class PreviewApiClient implements ApiClient {
 		return null;
 	}
 
+	async listResourceMediaItems(_id: string): Promise<MediaItemRecord[]> {
+		return [];
+	}
+
+	async listResourceUploads(_id: string): Promise<UploadSessionRecord[]> {
+		return [];
+	}
+
 	async createResource(data: CreateResourceInput): Promise<{ id: string; slug: string }> {
 		const { validateCreateResource } = await import("@procomeka/db/validation");
 		const validation = validateCreateResource(data);
@@ -282,6 +293,23 @@ export class PreviewApiClient implements ApiClient {
 		if (!resource) throw new Error("Recurso no encontrado");
 		const { deleteResource: del } = await import("@procomeka/db/repository");
 		await del(this.db, id);
+	}
+
+	async getUploadConfig(): Promise<UploadConfig> {
+		return {
+			maxFileSizeBytes: 0,
+			maxFilesPerBatch: 0,
+			maxConcurrentPerUser: 0,
+			chunkSizeBytes: 0,
+			sessionTtlMs: 0,
+			allowedMimeTypes: [],
+			allowedExtensions: [],
+			storageDir: "preview-disabled",
+		};
+	}
+
+	async cancelUpload(_id: string): Promise<{ id: string; cancelled: boolean }> {
+		throw new Error("Uploads no disponibles en modo preview");
 	}
 
 	async listUsers(opts?: { q?: string; role?: string; limit?: number; offset?: number }) {

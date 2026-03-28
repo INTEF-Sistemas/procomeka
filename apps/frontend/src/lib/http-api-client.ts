@@ -11,6 +11,9 @@ import type {
 	UserRecord,
 	CollectionRecord,
 	TaxonomyRecord,
+	MediaItemRecord,
+	UploadSessionRecord,
+	UploadConfig,
 } from "./api-client.ts";
 
 /**
@@ -111,6 +114,18 @@ export class HttpApiClient implements ApiClient {
 		return res.json();
 	}
 
+	async listResourceMediaItems(id: string): Promise<MediaItemRecord[]> {
+		const res = await fetch(`/api/admin/resources/${id}/media`, { credentials: "include" });
+		if (!res.ok) return [];
+		return res.json();
+	}
+
+	async listResourceUploads(id: string): Promise<UploadSessionRecord[]> {
+		const res = await fetch(`/api/admin/resources/${id}/uploads`, { credentials: "include" });
+		if (!res.ok) return [];
+		return res.json();
+	}
+
 	async createResource(data: CreateResourceInput): Promise<{ id: string; slug: string }> {
 		const res = await fetch("/api/admin/resources", {
 			method: "POST",
@@ -158,6 +173,23 @@ export class HttpApiClient implements ApiClient {
 			method: "DELETE",
 			credentials: "include",
 		});
+	}
+
+	async getUploadConfig(): Promise<UploadConfig> {
+		const res = await fetch("/api/admin/uploads/config", { credentials: "include" });
+		return res.json();
+	}
+
+	async cancelUpload(id: string): Promise<{ id: string; cancelled: boolean }> {
+		const res = await fetch(`/api/admin/uploads/${id}`, {
+			method: "DELETE",
+			credentials: "include",
+		});
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			throw err;
+		}
+		return res.json();
 	}
 
 	async listUsers(opts?: { q?: string; role?: string; limit?: number; offset?: number }): Promise<PaginatedResult<UserRecord>> {

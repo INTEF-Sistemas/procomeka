@@ -50,7 +50,7 @@ Base técnica y documental completada. API, auth y frontend editorial mínimo ya
 | Pipeline de ingestión OAI-PMH | No iniciada |
 | Flujo de curación y moderación | No iniciada |
 | Mejora de relevancia en búsqueda | No iniciada |
-| Panel editorial interno | En desarrollo — backoffice con sidebar y CRUD mínimos para recursos, usuarios, categorías y colecciones |
+| Panel editorial interno | En desarrollo — backoffice con sidebar, CRUD mínimos y uploader resumable multiarchivo para adjuntos de recursos |
 
 ---
 
