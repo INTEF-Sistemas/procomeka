@@ -1,6 +1,6 @@
 ---
 import AdminLayout from "../layouts/AdminLayout.astro";
-const base = import.meta.env.BASE_URL;
+import { DashboardIsland } from "../islands/dashboard/DashboardIsland.tsx";
 ---
 
 <AdminLayout title="Panel" activeSection="dashboard">
@@ -9,130 +9,9 @@ const base = import.meta.env.BASE_URL;
 		<h1>Panel de gestión</h1>
 		<p class="lead">Accede a los CRUD del catálogo según tu rol y continúa el flujo editorial desde un único punto.</p>
 	</section>
-
-	<section class="summary-grid" id="summary-grid" aria-live="polite">
-		<article class="summary-card">
-			<h2>Recursos</h2>
-			<p id="summary-resources">Cargando…</p>
-			<a href={`${base}admin/recursos`}>Gestionar recursos</a>
-		</article>
-		<article class="summary-card">
-			<h2>Colecciones</h2>
-			<p id="summary-collections">Cargando…</p>
-			<a href={`${base}admin/colecciones`}>Gestionar colecciones</a>
-		</article>
-		<article class="summary-card" data-min-role="curator">
-			<h2>Categorías</h2>
-			<p id="summary-taxonomies">Cargando…</p>
-			<a href={`${base}admin/categorias`}>Gestionar categorías</a>
-		</article>
-		<article class="summary-card" data-min-role="admin">
-			<h2>Usuarios</h2>
-			<p id="summary-users">Cargando…</p>
-			<a href={`${base}admin/usuarios`}>Gestionar usuarios</a>
-		</article>
-	</section>
-
-	<section class="dev-tools" id="dev-tools" style="display:none;">
-		<h2>Herramientas de desarrollo</h2>
-		<div class="seed-controls">
-			<label for="seed-count">Generar recursos:</label>
-			<select id="seed-count">
-				<option value="10">10</option>
-				<option value="100">100</option>
-				<option value="1000">1.000</option>
-				<option value="10000">10.000</option>
-			</select>
-			<button id="seed-btn" class="btn-secondary" type="button">Ejecutar</button>
-			<button id="seed-clean-btn" class="btn-danger" type="button">Limpiar y ejecutar</button>
-		</div>
-		<p id="seed-status" class="status-msg" aria-live="polite"></p>
-	</section>
+	<DashboardIsland client:load />
 </AdminLayout>
-
-<script>
-	import { getApiClient } from "../lib/get-api-client.ts";
-	import { canAccessSection } from "../lib/backoffice-nav.ts";
-	import { url } from "../lib/paths.ts";
-
-	async function loadSummary() {
-		const api = await getApiClient();
-		const session = await api.getSession();
-		const role = session?.user?.role ?? "reader";
-
-		const resources = await api.listAdminResources({ limit: 5, offset: 0 });
-		(document.getElementById("summary-resources") as HTMLElement).textContent = `${resources.total} recursos visibles`;
-
-		const collections = await api.listCollections({ limit: 5, offset: 0 });
-		(document.getElementById("summary-collections") as HTMLElement).textContent = `${collections.total} colecciones visibles`;
-
-		document.querySelectorAll("[data-min-role]").forEach((card) => {
-			const minRole = (card as HTMLElement).dataset.minRole as "curator" | "admin";
-			if (!canAccessSection(role, minRole)) {
-				(card as HTMLElement).style.display = "none";
-			}
-		});
-
-		if (canAccessSection(role, "curator")) {
-			const taxonomies = await api.listTaxonomies({ limit: 5, offset: 0 });
-			const target = document.getElementById("summary-taxonomies");
-			if (target) target.textContent = `${taxonomies.total} categorías visibles`;
-		}
-
-		if (canAccessSection(role, "admin")) {
-			const users = await api.listUsers({ limit: 5, offset: 0 });
-			const target = document.getElementById("summary-users");
-			if (target) target.textContent = `${users.total} usuarios`;
-		}
-
-		const isDev =
-			window.location.hostname === "localhost" ||
-			(window as Window & { __PREVIEW_MODE__?: boolean }).__PREVIEW_MODE__ === true;
-		if (isDev && canAccessSection(role, "admin")) {
-			const devTools = document.getElementById("dev-tools");
-			if (devTools) devTools.style.display = "block";
-		}
-	}
-
-	const seedBtn = document.getElementById("seed-btn");
-	const seedCleanBtn = document.getElementById("seed-clean-btn");
-	const seedCount = document.getElementById("seed-count") as HTMLSelectElement | null;
-	const seedStatus = document.getElementById("seed-status");
-
-	async function runSeed(clean: boolean) {
-		if (!seedCount) return;
-		if (!confirm(clean ? "¿Borrar recursos generados y crear nuevos?" : "¿Generar recursos aleatorios?")) return;
-
-		if (seedStatus) {
-			seedStatus.textContent = "Generando…";
-			seedStatus.className = "status-msg loading";
-		}
-
-		try {
-			const api = await getApiClient();
-			const result = await api.seedResources(Number(seedCount.value), clean);
-			if (seedStatus) {
-				seedStatus.textContent = `Creados ${result.count} recursos en ${result.durationMs}ms.`;
-				seedStatus.className = "status-msg success";
-			}
-			loadSummary();
-		} catch (error: any) {
-			if (seedStatus) {
-				seedStatus.textContent = error?.message ?? "Error al generar recursos";
-				seedStatus.className = "status-msg error";
-			}
-		}
-	}
-
-	seedBtn?.addEventListener("click", () => runSeed(false));
-	seedCleanBtn?.addEventListener("click", () => runSeed(true));
-
-	loadSummary().catch(() => {
-		window.location.href = url("login");
-	});
-</script>
-
-<style>
+<style is:global>
 	.hero {
 		margin-bottom: 1.5rem;
 	}
