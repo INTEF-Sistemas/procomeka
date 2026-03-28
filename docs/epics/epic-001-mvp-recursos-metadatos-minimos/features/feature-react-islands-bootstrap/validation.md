@@ -93,3 +93,35 @@
 - El uploader queda separado en un chunk `resource-uploader` de `114.08 kB` (`34.10 kB gzip`).
 - Los estilos de `admin/recursos/nuevo` y `admin/recursos/editar` se restauran usando CSS global acotado a `.form-container`.
 - En desarrollo siguen siendo posibles errores `504 (Outdated Optimize Dep)` de Vite sobre `@uppy/*` si la caché de `.vite/deps` está obsoleta; eso requiere reiniciar el dev server, no cambios adicionales de aplicación.
+
+## Validación — catálogo público y ficha de recurso — 2026-03-28
+- `cd apps/frontend && bun test` ✅
+- `cd apps/frontend && bun run build` ✅
+
+## Observaciones adicionales — catálogo público y ficha de recurso
+- `CatalogSearchIsland` se genera como chunk dedicado de `0.88 kB` (`0.49 kB gzip`).
+- `CatalogIsland` se genera como chunk dedicado de `8.82 kB` (`3.22 kB gzip`).
+- `ResourceDetailIsland` se genera como chunk dedicado de `4.64 kB` (`1.59 kB gzip`).
+- El catálogo mantiene la URL como fuente de verdad para `q`, `page`, `resourceType`, `language` y `license`.
+- Se mantienen los warnings previos de build relacionados con PGlite/browser externals y `eval` en dependencias de preview; no son nuevos de esta migración.
+
+## Validación — login y dashboard — 2026-03-28
+- `cd apps/frontend && bun test` ✅
+- `cd apps/frontend && bun run build` ✅
+
+## Observaciones adicionales — login y dashboard
+- `LoginIsland` se genera como chunk dedicado de `2.88 kB` (`1.12 kB gzip`).
+- `DashboardIsland` se genera como chunk dedicado de `4.09 kB` (`1.46 kB gzip`).
+- La lógica de sesión, login por correo, arranque OIDC, resumen del panel y herramientas de seed queda dentro de React.
+- Se mantienen los warnings previos de build relacionados con PGlite/browser externals y `eval` en dependencias de preview; no son nuevos de esta migración.
+
+## Validación — layouts y banner preview — 2026-03-28
+- `cd apps/frontend && bun test` ✅
+- `cd apps/frontend && bun run build` ✅
+
+## Observaciones adicionales — layouts y banner preview
+- `BaseNavIsland` se genera como chunk dedicado de `0.63 kB` (`0.40 kB gzip`).
+- `AdminNavIsland` se genera como chunk dedicado de `1.38 kB` (`0.71 kB gzip`).
+- `PreviewBannerIsland` se genera como chunk dedicado de `1.61 kB` (`0.71 kB gzip`).
+- El estado de sesión del layout base, la navegación responsive del backoffice y las utilidades de preview quedan encapsulados en React.
+- Se mantienen los warnings previos de build relacionados con PGlite/browser externals y `eval` en dependencias de preview; no son nuevos de esta migración.

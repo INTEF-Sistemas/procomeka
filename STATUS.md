@@ -650,3 +650,74 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-28 | `@.agents/skills/frontend-ux-accesibilidad` | Ajuste del editor de recursos: carga diferida del uploader, estilos restaurados y warning de claves corregido | Completado |
+
+## Actualización 2026-03-28 (ADR-0013: migración del catálogo público y ficha de recurso)
+
+- **Agente en turno:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se sustituyen los scripts imperativos del catálogo público y de la ficha pública de recurso por React islands.
+- **Cambios aplicados:**
+  - Se crean `apps/frontend/src/islands/catalog/CatalogSearchIsland.tsx` y `apps/frontend/src/islands/catalog/CatalogIsland.tsx`.
+  - `apps/frontend/src/pages/index.astro` pasa a shell Astro con buscador en cabecera y contenido del catálogo montados como islands React.
+  - La búsqueda, los filtros, la paginación y el modo de vista mantienen la URL como fuente de verdad.
+  - Se crea `apps/frontend/src/islands/catalog/ResourceDetailIsland.tsx`.
+  - `apps/frontend/src/pages/recurso.astro` pasa a shell Astro + island React para la ficha pública.
+  - Se añaden tests TypeScript del shell inicial de catálogo y ficha pública.
+- **Validación ejecutada:**
+  - `cd apps/frontend && bun test`
+  - `cd apps/frontend && bun run build`
+- **Resultado:** validación del frontend en verde tras la migración pública.
+- **Impacto de bundle observado:**
+  - `CatalogSearchIsland`: `0.88 kB` (`0.49 kB gzip`)
+  - `CatalogIsland`: `8.82 kB` (`3.22 kB gzip`)
+  - `ResourceDetailIsland`: `4.64 kB` (`1.59 kB gzip`)
+- **Traspaso recomendado:** continuar con `login` y `dashboard`, que siguen usando listeners imperativos y son las siguientes piezas interactivas fuera de React.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Migración del catálogo público y de la ficha pública de recurso a React islands; tests y build de frontend en verde | Completado |
+
+## Actualización 2026-03-28 (ADR-0013: migración de login y dashboard)
+
+- **Agente en turno:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se sustituyen los scripts imperativos de `apps/frontend/src/pages/login.astro` y `apps/frontend/src/pages/dashboard.astro` por React islands.
+- **Cambios aplicados:**
+  - Se crean `apps/frontend/src/islands/auth/LoginIsland.tsx` y `apps/frontend/src/islands/dashboard/DashboardIsland.tsx`.
+  - `login.astro` pasa a shell Astro + island React para login por correo, arranque OIDC y redirección por sesión existente.
+  - `dashboard.astro` pasa a shell Astro + island React para resumen de entidades, visibilidad por rol y herramientas de seed en desarrollo.
+  - Se añaden tests TypeScript del shell inicial de ambas islands.
+- **Validación ejecutada:**
+  - `cd apps/frontend && bun test`
+  - `cd apps/frontend && bun run build`
+- **Resultado:** validación del frontend en verde tras la migración.
+- **Impacto de bundle observado:**
+  - `LoginIsland`: `2.88 kB` (`1.12 kB gzip`)
+  - `DashboardIsland`: `4.09 kB` (`1.46 kB gzip`)
+- **Traspaso recomendado:** quedan como piezas menores fuera de React el banner preview, el shell de navegación del admin y algunos scripts de layout general.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Migración de `login` y `dashboard` a React islands; tests y build de frontend en verde | Completado |
+
+## Actualización 2026-03-28 (ADR-0013: migración de layouts y banner preview)
+
+- **Agente en turno:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se sustituyen los scripts imperativos residuales del chrome compartido de frontend por React islands.
+- **Cambios aplicados:**
+  - Se crean `apps/frontend/src/islands/layout/BaseNavIsland.tsx`, `apps/frontend/src/islands/layout/AdminNavIsland.tsx` y `apps/frontend/src/islands/layout/PreviewBannerIsland.tsx`.
+  - `Base.astro` pasa a usar una island React para reflejar el estado de sesión en la navegación pública.
+  - `AdminLayout.astro` pasa a usar una island React para navegación del backoffice y menú responsive.
+  - `PreviewBanner.astro` pasa a usar una island React para cambio de rol y reinicio de datos en preview.
+  - Se añaden tests TypeScript del shell inicial de estas islands de layout.
+- **Validación ejecutada:**
+  - `cd apps/frontend && bun test`
+  - `cd apps/frontend && bun run build`
+- **Resultado:** validación del frontend en verde tras cerrar el chrome compartido.
+- **Impacto de bundle observado:**
+  - `BaseNavIsland`: `0.63 kB` (`0.40 kB gzip`)
+  - `AdminNavIsland`: `1.38 kB` (`0.71 kB gzip`)
+  - `PreviewBannerIsland`: `1.61 kB` (`0.71 kB gzip`)
+- **Traspaso recomendado:** la migración principal a React queda funcionalmente completada; lo siguiente ya es consolidación, refactor y validación end-to-end.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Migración de `Base`, `AdminLayout` y `PreviewBanner` a React islands; tests y build de frontend en verde | Completado |

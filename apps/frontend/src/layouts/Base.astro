@@ -1,4 +1,5 @@
 ---
+import { BaseNavIsland } from "../islands/layout/BaseNavIsland.tsx";
 import PreviewBanner from "../components/PreviewBanner.astro";
 
 interface Props {
@@ -31,11 +32,7 @@ const hasHeaderCenter = Astro.slots.has("header-center");
 						<slot name="header-center" />
 					</div>
 				)}
-				<div class="nav-links">
-					<a href={`${base}admin/recursos/nuevo`}>Crear recurso</a>
-					<a id="nav-login" href={`${base}login`}>Iniciar sesion</a>
-					<a id="nav-user" href={`${base}dashboard`} style="display:none;"></a>
-				</div>
+				<BaseNavIsland client:load />
 			</nav>
 		</header>
 		<main>
@@ -45,26 +42,6 @@ const hasHeaderCenter = Astro.slots.has("header-center");
 			<p>Plataforma de recursos educativos abiertos</p>
 		</footer>
 		<PreviewBanner />
-		<script>
-			import { getApiClient } from "../lib/get-api-client.ts";
-
-			const navLogin = document.getElementById("nav-login") as HTMLAnchorElement;
-			const navUser = document.getElementById("nav-user") as HTMLAnchorElement;
-
-			(async () => {
-				try {
-					const api = await getApiClient();
-					const session = await api.getSession();
-					if (session?.user) {
-						navLogin.style.display = "none";
-						navUser.textContent = session.user.email;
-						navUser.style.display = "";
-					}
-				} catch {
-					// Sin sesion: se queda "Iniciar sesion"
-				}
-			})();
-		</script>
 	</body>
 </html>
 

@@ -1,62 +1,15 @@
 ---
 import Base from "../layouts/Base.astro";
-import { LANGUAGE_OPTIONS, LICENSE_OPTIONS, RESOURCE_TYPE_OPTIONS } from "../lib/resource-filters.ts";
+import { CatalogIsland } from "../islands/catalog/CatalogIsland.tsx";
+import { CatalogSearchIsland } from "../islands/catalog/CatalogSearchIsland.tsx";
+
+const initialQuery = Astro.url.searchParams.get("q") ?? "";
 ---
 
 <Base title="Inicio">
-	<input slot="header-center" type="text" id="header-search" placeholder="Buscar recursos..." aria-label="Buscar recursos" class="header-search-input" />
-
-	<div class="catalog">
-		<aside class="sidebar" id="sidebar">
-			<h2 class="sidebar-title">Filtros</h2>
-			<div class="filter-group">
-				<label for="filter-resource-type">Tipo de recurso</label>
-				<select id="filter-resource-type">
-					{RESOURCE_TYPE_OPTIONS.map((o) => <option value={o.value}>{o.label}</option>)}
-				</select>
-			</div>
-			<div class="filter-group">
-				<label for="filter-language">Idioma</label>
-				<select id="filter-language">
-					{LANGUAGE_OPTIONS.map((o) => <option value={o.value}>{o.label}</option>)}
-				</select>
-			</div>
-			<div class="filter-group">
-				<label for="filter-license">Licencia</label>
-				<select id="filter-license">
-					{LICENSE_OPTIONS.map((o) => <option value={o.value}>{o.label}</option>)}
-				</select>
-			</div>
-			<button id="clear-filters" class="clear-btn" type="button">Limpiar filtros</button>
-		</aside>
-
-		<section class="content">
-			<div class="toolbar">
-				<button id="toggle-sidebar" class="toggle-sidebar-btn" type="button">Filtros</button>
-				<span id="results-summary" class="results-summary" aria-live="polite"></span>
-				<div class="toolbar-right">
-					<button id="view-grid" class="view-btn active" type="button" title="Cuadricula">&#9638;</button>
-					<button id="view-list" class="view-btn" type="button" title="Lista">&#9776;</button>
-				</div>
-			</div>
-
-			<div id="resources-container" class="resources-grid" aria-live="polite">
-				<p class="loading">Cargando recursos...</p>
-			</div>
-
-			<nav id="pagination" class="pagination" aria-label="Paginacion" hidden>
-				<button id="pag-prev" type="button" class="pag-btn" disabled>&larr; Anterior</button>
-				<div id="pag-numbers" class="pag-numbers"></div>
-				<button id="pag-next" type="button" class="pag-btn">Siguiente &rarr;</button>
-			</nav>
-		</section>
-	</div>
+	<CatalogSearchIsland slot="header-center" client:load initialQuery={initialQuery} />
+	<CatalogIsland client:load />
 </Base>
-
-<script>
-	import { initCatalog } from "../lib/catalog-controller.ts";
-	initCatalog();
-</script>
 
 <style is:global>
 	.header-search-input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; }

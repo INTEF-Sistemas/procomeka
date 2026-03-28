@@ -54,3 +54,24 @@ En desarrollo
 - [x] Restaurar los estilos de `nuevo` y `editar` tras mover el marcado a React islands.
 - [x] Corregir el warning de React por claves en el stepper editorial.
 - [x] Revalidar frontend (`bun test` y `bun run build`) tras el ajuste.
+
+## Migración del catálogo público y ficha de recurso — 2026-03-28
+- [x] Sustituir el controlador imperativo de `index.astro` por React islands para buscador, filtros, vista y paginación.
+- [x] Mantener la URL como fuente de verdad para búsqueda, filtros y paginación del catálogo.
+- [x] Sustituir el script imperativo de `recurso.astro` por una React island para la ficha pública.
+- [x] Añadir tests TypeScript del shell inicial de catálogo y ficha pública.
+- [x] Revalidar frontend (`bun test` y `bun run build`) tras la migración pública.
+
+## Migración de login y dashboard — 2026-03-28
+- [x] Sustituir el script imperativo de `login.astro` por una React island para autenticación por correo y arranque OIDC.
+- [x] Sustituir el script imperativo de `dashboard.astro` por una React island para resúmenes y herramientas de seed.
+- [x] Mantener redirección a dashboard/login y visibilidad por rol dentro del flujo React.
+- [x] Añadir tests TypeScript del shell inicial de login y dashboard.
+- [x] Revalidar frontend (`bun test` y `bun run build`) tras esta migración.
+
+## Migración de layouts y banner preview — 2026-03-28
+- [x] Sustituir el script imperativo de `Base.astro` por una React island para el estado de sesión en navegación pública.
+- [x] Sustituir el script imperativo de `AdminLayout.astro` por una React island para navegación y menú responsive del backoffice.
+- [x] Sustituir el script imperativo de `PreviewBanner.astro` por una React island para cambio de rol y reset en preview.
+- [x] Añadir tests TypeScript del shell inicial de estas islands de layout.
+- [x] Revalidar frontend (`bun test` y `bun run build`) tras la migración del chrome compartido.

@@ -1,20 +1,10 @@
 ---
+import { PreviewBannerIsland } from "../islands/layout/PreviewBannerIsland.tsx";
 const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 ---
 
 {isPreview && (
-	<div id="preview-banner" class="preview-banner">
-		<span class="preview-label">Vista previa</span>
-		<span class="preview-role">
-			Rol: <select id="role-switcher">
-				<option value="admin">Admin</option>
-				<option value="curator">Curator</option>
-				<option value="author">Author</option>
-				<option value="reader">Reader</option>
-			</select>
-		</span>
-		<button id="reset-preview" type="button">Reiniciar datos</button>
-	</div>
+	<PreviewBannerIsland client:load />
 )}
 
 <style>
@@ -55,7 +45,7 @@ const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 		background: white;
 	}
 
-	#reset-preview {
+	.preview-banner button {
 		background: rgba(255, 255, 255, 0.2);
 		color: white;
 		border: 1px solid rgba(255, 255, 255, 0.4);
@@ -65,34 +55,7 @@ const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 		cursor: pointer;
 	}
 
-	#reset-preview:hover {
+	.preview-banner button:hover {
 		background: rgba(255, 255, 255, 0.3);
 	}
 </style>
-
-<script>
-	const banner = document.getElementById("preview-banner");
-	if (banner) {
-		const switcher = document.getElementById("role-switcher") as HTMLSelectElement | null;
-		const resetBtn = document.getElementById("reset-preview");
-
-		// Restaurar rol guardado
-		const savedRole = localStorage.getItem("procomeka-preview-role") ?? "admin";
-		if (switcher) switcher.value = savedRole;
-
-		switcher?.addEventListener("change", async () => {
-			const { PreviewApiClient } = await import("../lib/preview-api-client.ts");
-			const client = await PreviewApiClient.getInstance();
-			client.switchRole(switcher.value);
-			window.location.reload();
-		});
-
-		resetBtn?.addEventListener("click", async () => {
-			resetBtn.textContent = "Reiniciando...";
-			const { PreviewApiClient } = await import("../lib/preview-api-client.ts");
-			const client = await PreviewApiClient.getInstance();
-			await client.resetDatabase();
-			window.location.reload();
-		});
-	}
-</script>
