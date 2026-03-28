@@ -1,0 +1,14 @@
+import{g as p}from"./get-api-client.CCfl8Avy.js";import{u as f}from"./paths.DDXL0-p6.js";import"./preload-helper.B2DTvVOL.js";const c=document.getElementById("resources-body"),u=document.getElementById("list-status"),v=document.getElementById("page-label"),b=document.getElementById("prev-page"),y=document.getElementById("next-page"),E=document.getElementById("search"),$=document.getElementById("status-filter"),m=document.getElementById("confirm-dialog"),B=document.getElementById("confirm-message");let a=0;const d=10;let o=0,l=null;function w(e){return{draft:"admin-badge--draft",review:"admin-badge--review",published:"admin-badge--published",archived:"admin-badge--archived"}[e]??""}function I(e){return{draft:"Borrador",review:"En revision",published:"Publicado",archived:"Archivado"}[e]??e}function s(e){const n=document.createElement("div");return n.textContent=e,n.innerHTML}async function i(){u.textContent="Cargando recursos...";const n=await(await p()).listAdminResources({q:E.value||void 0,limit:d,offset:a,status:$.value||void 0});o=n.total;const g=document.querySelector(".admin-pager");if(o<=d)g.hidden=!0;else{g.hidden=!1;const t=Math.floor(a/d)+1,r=Math.ceil(o/d);v.textContent=`Pagina ${t} de ${r}`,b.disabled=a===0,y.disabled=a+d>=o}if(!n.data.length){c.innerHTML='<tr class="admin-empty-row"><td colspan="7">No hay recursos para los filtros actuales.</td></tr>',u.textContent=`${o} recursos encontrados`;return}c.innerHTML=n.data.map(t=>`
+			<tr>
+				<td>${s(t.title)}</td>
+				<td>${s(t.resourceType??"-")}</td>
+				<td>${s(t.language??"-")}</td>
+				<td><span class="admin-badge ${w(t.editorialStatus)}">${I(t.editorialStatus)}</span></td>
+				<td>${s(t.createdByName??t.author??"Sin autoria")}</td>
+				<td>${t.updatedAt?new Date(t.updatedAt).toLocaleDateString("es-ES"):"-"}</td>
+				<td class="actions-cell">
+					<a href="${f(`admin/recursos/editar?id=${t.id}`)}" class="admin-btn admin-btn--sm">Editar</a>
+					<button type="button" class="admin-btn admin-btn--sm admin-btn--danger" data-delete-id="${t.id}" data-delete-title="${s(t.title)}">Eliminar</button>
+				</td>
+			</tr>
+		`).join(""),c.querySelectorAll("[data-delete-id]").forEach(t=>{t.addEventListener("click",()=>{const r=t;l=r.dataset.deleteId??null;const h=r.dataset.deleteTitle??"este recurso";B.textContent=`Seguro que deseas eliminar "${h}"?`,m.showModal()})}),u.textContent=`${o} recursos encontrados`}m.addEventListener("close",async()=>{m.returnValue==="confirm"&&l&&(await(await p()).deleteResource(l),l=null,i()),l=null});document.getElementById("apply-filters")?.addEventListener("click",()=>{a=0,i()});E.addEventListener("keydown",e=>{e.key==="Enter"&&(a=0,i())});b.addEventListener("click",()=>{a=Math.max(0,a-d),i()});y.addEventListener("click",()=>{a+=d,i()});i().catch(()=>{window.location.href=f("login")});
