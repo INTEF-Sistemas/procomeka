@@ -40,3 +40,56 @@
 ## Observaciones adicionales — `admin/colecciones`
 - La island `CollectionsCrudIsland` se genera como chunk dedicado de `7.21 kB` (`2.37 kB gzip`) sobre el runtime compartido de React ya introducido en la iteración anterior.
 - Se mantienen los warnings previos de build relacionados con PGlite/browser externals y `eval` en dependencias de preview; no son nuevos de esta migración.
+
+## Validación prevista — `admin/usuarios` — 2026-03-28
+- `cd apps/frontend && bun test`
+- `cd apps/frontend && bun run build`
+- `bun run test`
+
+## Resultado de validación — `admin/usuarios` — 2026-03-28
+- `cd apps/frontend && bun test` ✅
+- `cd apps/frontend && bun run build` ✅
+- `bun run test` ✅
+
+## Observaciones adicionales — `admin/usuarios`
+- La island `UsersCrudIsland` se genera como chunk dedicado de `4.23 kB` (`1.70 kB gzip`) sobre el runtime compartido.
+- La validación global del repositorio se mantiene en `204 pass`, `0 fail` y `91.94%` de cobertura de líneas.
+
+## Validación prevista — `admin/recursos/index` — 2026-03-28
+- `cd apps/frontend && bun test`
+- `cd apps/frontend && bun run build`
+- `bun run test`
+
+## Resultado de validación — `admin/recursos/index` — 2026-03-28
+- `cd apps/frontend && bun test` ✅
+- `cd apps/frontend && bun run build` ✅
+- `bun run test` ✅
+
+## Observaciones adicionales — `admin/recursos/index`
+- La island `ResourcesTableIsland` se genera como chunk dedicado de `3.88 kB` (`1.67 kB gzip`) sobre el runtime compartido.
+- La validación global del repositorio se mantiene en `204 pass`, `0 fail` y `91.94%` de cobertura de líneas.
+
+## Validación prevista — formularios de recurso — 2026-03-28
+- `cd apps/frontend && bun test`
+- `cd apps/frontend && bun run build`
+- `bun run test`
+
+## Resultado de validación — formularios de recurso — 2026-03-28
+- `cd apps/frontend && bun test` ✅
+- `cd apps/frontend && bun run build` ✅
+- `bun run test` ✅
+
+## Observaciones adicionales — formularios de recurso
+- `ResourceFormIsland` se genera como chunk dedicado de `6.26 kB` (`2.01 kB gzip`) sobre el runtime compartido.
+- `ResourceEditorIsland` se genera como chunk dedicado de `124.90 kB` (`37.22 kB gzip`), siendo la pieza más pesada de la fase por el workflow editorial y la integración del uploader.
+- La validación global del repositorio se mantiene en `204 pass`, `0 fail` y `91.94%` de cobertura de líneas.
+
+## Validación posterior — ajuste del editor de recurso — 2026-03-28
+- `cd apps/frontend && bun test` ✅
+- `cd apps/frontend && bun run build` ✅
+
+## Observaciones adicionales — ajuste del editor de recurso
+- `ResourceEditorIsland` reduce su chunk inicial a `11.54 kB` (`3.72 kB gzip`) al diferir la carga de `resource-uploader`.
+- El uploader queda separado en un chunk `resource-uploader` de `114.08 kB` (`34.10 kB gzip`).
+- Los estilos de `admin/recursos/nuevo` y `admin/recursos/editar` se restauran usando CSS global acotado a `.form-container`.
+- En desarrollo siguen siendo posibles errores `504 (Outdated Optimize Dep)` de Vite sobre `@uppy/*` si la caché de `.vite/deps` está obsoleta; eso requiere reiniciar el dev server, no cambios adicionales de aplicación.

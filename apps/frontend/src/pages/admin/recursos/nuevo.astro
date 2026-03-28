@@ -1,195 +1,47 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { ResourceFormIsland } from "../../../islands/resources/ResourceFormIsland.tsx";
 ---
 
 <AdminLayout title="Crear recurso" activeSection="resources">
 	<div class="form-container">
 		<h1>Crear recurso</h1>
-
-		<div id="auth-check" style="display:none;">
-			<p>Necesitas <a id="login-link" href="#">iniciar sesión</a> como autor o superior para crear recursos.</p>
-		</div>
-
-		<div id="error-message" class="error" role="alert" aria-live="polite" style="display:none;"></div>
-		<div id="success-message" class="success" role="status" aria-live="polite" style="display:none;"></div>
-
-		<form id="resource-form" style="display:none;" novalidate>
-			<div class="field">
-				<label for="title">Título *</label>
-				<input type="text" id="title" required aria-describedby="title-error" />
-				<span id="title-error" class="field-error" role="alert"></span>
-			</div>
-
-			<div class="field">
-				<label for="description">Descripción *</label>
-				<textarea id="description" rows="4" required aria-describedby="description-error"></textarea>
-				<span id="description-error" class="field-error" role="alert"></span>
-			</div>
-
-			<div class="row">
-				<div class="field">
-					<label for="language">Idioma *</label>
-					<select id="language" required aria-describedby="language-error">
-						<option value="es">Español</option>
-						<option value="en">Inglés</option>
-						<option value="ca">Catalán</option>
-						<option value="eu">Euskera</option>
-						<option value="gl">Gallego</option>
-					</select>
-					<span id="language-error" class="field-error" role="alert"></span>
-				</div>
-
-				<div class="field">
-					<label for="license">Licencia *</label>
-					<select id="license" required aria-describedby="license-error">
-						<option value="cc-by">CC BY</option>
-						<option value="cc-by-sa">CC BY-SA</option>
-						<option value="cc-by-nc">CC BY-NC</option>
-						<option value="cc-by-nc-sa">CC BY-NC-SA</option>
-						<option value="cc0">CC0 (Dominio público)</option>
-					</select>
-					<span id="license-error" class="field-error" role="alert"></span>
-				</div>
-			</div>
-
-			<div class="field">
-				<label for="resourceType">Tipo de recurso *</label>
-				<select id="resourceType" required aria-describedby="resourceType-error">
-					<option value="documento">Documento</option>
-					<option value="presentacion">Presentación</option>
-					<option value="video">Vídeo</option>
-					<option value="audio">Audio</option>
-					<option value="imagen">Imagen</option>
-					<option value="actividad-interactiva">Actividad interactiva</option>
-					<option value="secuencia-didactica">Secuencia didáctica</option>
-					<option value="ejercicio">Ejercicio</option>
-					<option value="evaluacion">Evaluación</option>
-					<option value="proyecto">Proyecto</option>
-				</select>
-				<span id="resourceType-error" class="field-error" role="alert"></span>
-			</div>
-
-			<div class="field">
-				<label for="author">Autor</label>
-				<input type="text" id="author" aria-describedby="author-error" />
-				<span id="author-error" class="field-error" role="alert"></span>
-			</div>
-
-			<div class="field">
-				<label for="keywords">Palabras clave (separadas por comas)</label>
-				<input type="text" id="keywords" placeholder="matemáticas, fracciones, visual" aria-describedby="keywords-error" />
-				<span id="keywords-error" class="field-error" role="alert"></span>
-			</div>
-
-			<button type="submit" id="submit-btn">Crear recurso</button>
-		</form>
+		<ResourceFormIsland mode="create" client:load />
 	</div>
 </AdminLayout>
 
-<script>
-	import { getApiClient } from "../../../lib/get-api-client.ts";
-	import { url } from "../../../lib/paths.ts";
-
-	const form = document.getElementById("resource-form") as HTMLFormElement;
-	const authCheck = document.getElementById("auth-check") as HTMLDivElement;
-	const errorDiv = document.getElementById("error-message") as HTMLDivElement;
-	const successDiv = document.getElementById("success-message") as HTMLDivElement;
-
-	// Configurar enlaces con base path
-	const loginLink = document.getElementById("login-link") as HTMLAnchorElement;
-	if (loginLink) loginLink.href = url("login");
-
-	function clearFieldErrors() {
-		form.querySelectorAll(".field-error").forEach((el) => { el.textContent = ""; });
-		form.querySelectorAll("[aria-invalid]").forEach((el) => { el.removeAttribute("aria-invalid"); });
-	}
-
-	function showFieldErrors(details: { field: string; message: string }[]) {
-		for (const err of details) {
-			const errorSpan = document.getElementById(`${err.field}-error`);
-			const input = document.getElementById(err.field);
-			if (errorSpan) errorSpan.textContent = err.message;
-			if (input) input.setAttribute("aria-invalid", "true");
-		}
-	}
-
-	async function checkAuth() {
-		try {
-			const api = await getApiClient();
-			const session = await api.getSession();
-			if (!session?.user) { authCheck.style.display = "block"; return; }
-
-			const role = session.user.role ?? "reader";
-			const hierarchy = ["reader", "author", "curator", "admin"];
-			if (hierarchy.indexOf(role) < 1) {
-				authCheck.style.display = "block";
-				return;
-			}
-			form.style.display = "block";
-		} catch {
-			authCheck.style.display = "block";
-		}
-	}
-
-	form.addEventListener("submit", async (e) => {
-		e.preventDefault();
-		errorDiv.style.display = "none";
-		successDiv.style.display = "none";
-		clearFieldErrors();
-
-		const body = {
-			title: (document.getElementById("title") as HTMLInputElement).value,
-			description: (document.getElementById("description") as HTMLTextAreaElement).value,
-			language: (document.getElementById("language") as HTMLSelectElement).value,
-			license: (document.getElementById("license") as HTMLSelectElement).value,
-			resourceType: (document.getElementById("resourceType") as HTMLSelectElement).value,
-			author: (document.getElementById("author") as HTMLInputElement).value || undefined,
-			keywords: (document.getElementById("keywords") as HTMLInputElement).value || undefined,
-		};
-
-		try {
-			const api = await getApiClient();
-			const data = await api.createResource(body);
-			successDiv.innerHTML = `Recurso creado. Redirigiendo al editor para adjuntar archivos…`;
-			successDiv.style.display = "block";
-			window.setTimeout(() => {
-				window.location.href = url(`admin/recursos/editar?id=${data.id}`);
-			}, 500);
-		} catch (err: unknown) {
-			const e = err as { details?: { field: string; message: string }[]; error?: string };
-			if (e?.details) {
-				showFieldErrors(e.details);
-			}
-			errorDiv.textContent = e?.error ?? "Error al crear el recurso";
-			errorDiv.style.display = "block";
-		}
-	});
-
-	checkAuth();
-</script>
-
-<style>
+<style is:global>
 	.form-container { max-width: 600px; margin: 0 auto; }
-	h1 { margin-bottom: 1.5rem; }
-	.field { margin-bottom: 1rem; }
-	label { display: block; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.9rem; }
-	input, textarea, select {
+	.form-container h1 { margin-bottom: 1.5rem; }
+	.form-container .field { margin-bottom: 1rem; }
+	.form-container label { display: block; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.9rem; }
+	.form-container input,
+	.form-container textarea,
+	.form-container select {
 		width: 100%; padding: 0.5rem; border: 1px solid #d1d5db;
 		border-radius: 4px; font-size: 1rem; box-sizing: border-box;
 	}
-	input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"] {
+	.form-container input[aria-invalid="true"],
+	.form-container textarea[aria-invalid="true"],
+	.form-container select[aria-invalid="true"] {
 		border-color: #dc2626;
 	}
-	textarea { resize: vertical; }
-	.row { display: flex; gap: 1rem; }
-	.row .field { flex: 1; }
-	button {
+	.form-container textarea { resize: vertical; }
+	.form-container .row { display: flex; gap: 1rem; }
+	.form-container .row .field { flex: 1; }
+	.form-container button {
 		width: 100%; padding: 0.75rem; background: #1a56db; color: white;
 		border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; margin-top: 0.5rem;
 	}
-	button:hover { background: #1e40af; }
-	.error { background: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; }
-	.success { background: #d1fae5; color: #065f46; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; }
-	.success a { color: #065f46; font-weight: 600; }
-	.field-error { display: block; color: #dc2626; font-size: 0.8rem; margin-top: 0.2rem; min-height: 1rem; }
+	.form-container button:hover { background: #1e40af; }
+	.form-container .error,
+	.form-container .admin-feedback--error {
+		background: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;
+	}
+	.form-container .success,
+	.form-container .admin-feedback--success {
+		background: #d1fae5; color: #065f46; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;
+	}
+	.form-container .success a { color: #065f46; font-weight: 600; }
+	.form-container .field-error { display: block; color: #dc2626; font-size: 0.8rem; margin-top: 0.2rem; min-height: 1rem; }
 </style>
