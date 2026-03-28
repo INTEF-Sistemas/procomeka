@@ -2,7 +2,7 @@
 
 ## Estado: Fase 1 — MVP de catálogo
 
-Base técnica y documental completada. API, auth y frontend editorial mínimo ya tienen primera implementación; el catálogo funcional todavía no.
+Catalogo MVP operativo con busqueda facetada, CRUD unificado, flujo editorial completo y uploads resumables. Refactorizacion de arquitectura completada (PR #52).
 
 ---
 
@@ -33,10 +33,13 @@ Base técnica y documental completada. API, auth y frontend editorial mínimo ya
 | Arquitectura base del sistema | Completado — monorepo, Hono, Astro, Drizzle, PGlite dev |
 | Autenticación y autorización | Completado — Better Auth (password + OIDC), RBAC, CLI usuarios, login/dashboard |
 | Flujo editorial de recursos | Completado — stepper visual, transiciones por rol (author→review, curator→publish), campo createdBy, colores semafóricos |
-| Búsqueda y facetas iniciales | En desarrollo — búsqueda por texto, paginación e interfaz de filtros básicos por tipo, idioma y licencia |
-| API REST pública v1 | En desarrollo — listado y detalle de recursos publicados, paginación y filtros básicos; colecciones siguen en placeholder |
-| Importación piloto desde CSV | No iniciada |
-| Frontend público mínimo | En desarrollo — catálogo público, ficha de recurso, paginación y filtros básicos; faltan colecciones y refinamientos de descubrimiento |
+| Busqueda y facetas iniciales | Completado — sidebar facetada (tipo, idioma, licencia), paginacion numerada, grid/list toggle, filtros dinamicos desde taxonomias |
+| API REST publica v1 | Completado — listado y detalle de recursos publicados, paginacion, filtros, endpoint publico de taxonomias; colecciones en placeholder |
+| Importacion piloto desde CSV | No iniciada |
+| Frontend publico minimo | Completado — catalogo con sidebar, ficha de recurso con layout 2 columnas, pills, archivos adjuntos, vista responsive |
+| Subidas resumables | Completado — ADR-0011 (Tus), ADR-0012 (IndexedDB preview), panel de uploads multiarchivo |
+| CRUD builder generico | Completado — `buildCrudRoutes` elimina boilerplate, entidades unificadas |
+| Entidades como taxonomias | Completado — tipos de recurso, idiomas y licencias gestionables desde admin |
 
 ---
 
@@ -50,7 +53,7 @@ Base técnica y documental completada. API, auth y frontend editorial mínimo ya
 | Pipeline de ingestión OAI-PMH | No iniciada |
 | Flujo de curación y moderación | No iniciada |
 | Mejora de relevancia en búsqueda | No iniciada |
-| Panel editorial interno | En desarrollo — backoffice con sidebar, CRUD mínimos y uploader resumable multiarchivo para adjuntos de recursos |
+| Panel editorial interno | Completado (MVP) — backoffice con sidebar, CSS unificado, CRUD para recursos/colecciones/categorias/usuarios, dialogos nativos, status badges, uploader resumable |
 
 ---
 

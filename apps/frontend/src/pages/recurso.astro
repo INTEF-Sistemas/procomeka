@@ -3,7 +3,7 @@ import Base from "../layouts/Base.astro";
 ---
 
 <Base title="Recurso">
-	<div id="resource-detail">
+	<div id="resource-detail" class="detail-page">
 		<p class="loading">Cargando recurso...</p>
 	</div>
 </Base>
@@ -11,119 +11,182 @@ import Base from "../layouts/Base.astro";
 <script>
 	import { getApiClient } from "../lib/get-api-client.ts";
 	import { url } from "../lib/paths.ts";
-
-	const STATUS_LABELS: Record<string, string> = {
-		draft: "Borrador",
-		review: "En revisión",
-		published: "Publicado",
-		archived: "Archivado",
-	};
+	import { escapeHtml, TYPE_ICONS, STATUS_MAP, FILE_ICONS, formatBytes } from "../lib/resource-display.ts";
 
 	const container = document.getElementById("resource-detail") as HTMLDivElement;
-	const params = new URLSearchParams(window.location.search);
-	const slug = params.get("slug");
+	const slug = new URLSearchParams(window.location.search).get("slug");
 
 	async function loadResource() {
 		if (!slug) {
-			container.innerHTML = `<p>No se especificó un recurso.</p><a href='${url("")}'>Volver al inicio</a>`;
+			container.innerHTML = `<p class="empty-state">No se especifico un recurso. <a href="${url("")}">Volver al catalogo</a></p>`;
 			return;
 		}
 
 		try {
 			const api = await getApiClient();
-			const r = await api.getResourceBySlug(slug);
-
+			const [r, session] = await Promise.all([
+				api.getResourceBySlug(slug),
+				api.getSession().catch(() => null),
+			]);
 			if (!r) {
-				container.innerHTML = `<p>Recurso no encontrado.</p><a href='${url("")}'>Volver al inicio</a>`;
+				container.innerHTML = `<p class="empty-state">Recurso no encontrado. <a href="${url("")}">Volver al catalogo</a></p>`;
 				return;
 			}
 
-			// Check if user can edit
-			let editButton = "";
-			try {
-				const session = await api.getSession();
-				if (session?.user) {
-					const role = session.user.role ?? "reader";
-					const hierarchy = ["reader", "author", "curator", "admin"];
-					if (hierarchy.indexOf(role) >= 1) {
-						editButton = `<a href="${url(`admin/recursos/editar?id=${r.id}`)}" class="btn-edit" aria-label="Editar recurso">Editar</a>`;
-					}
-				}
-			} catch { /* no session, no edit button */ }
+			let editBtn = "";
+			const role = session?.user?.role ?? "reader";
+			const ROLES = ["reader", "author", "curator", "admin"];
+			if (ROLES.indexOf(role) >= 1) {
+				editBtn = `<a href="${url(`admin/recursos/editar?id=${r.id}`)}" class="edit-btn">Editar recurso</a>`;
+			}
 
-			const status = r.editorialStatus ?? "draft";
-			const statusLabel = STATUS_LABELS[status] ?? status;
-			const attachments = r.mediaItems?.length
-				? `
-					<section class="attachments">
-						<h2>Archivos</h2>
-						<ul class="attachment-list">
-							${r.mediaItems.map((item) => `
-								<li class="attachment-item">
-									<a href="${item.url}" class="attachment-link" download>
-										${item.filename ?? "Archivo adjunto"}
-									</a>
-									${item.fileSize ? `<span class="attachment-meta">${new Intl.NumberFormat("es-ES").format(item.fileSize)} bytes</span>` : ""}
-								</li>
-							`).join("")}
-						</ul>
-					</section>
-				`
+			const st = STATUS_MAP[r.editorialStatus] ?? STATUS_MAP.draft;
+			const icon = TYPE_ICONS[r.resourceType] || "&#128196;";
+			const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" }) : "";
+
+			const keywords = r.keywords
+				? r.keywords.split(",").map((k: string) => `<span class="keyword">${escapeHtml(k.trim())}</span>`).join("")
 				: "";
+
+			const attachments = r.mediaItems?.length
+				? r.mediaItems.map((m: Record<string, unknown>) => {
+					const fileIcon = FILE_ICONS[m.mimeType as string] || "&#128193;";
+					const size = m.fileSize ? formatBytes(m.fileSize as number) : "";
+					return `
+						<a href="${m.url}" class="file-card" download>
+							<span class="file-icon">${fileIcon}</span>
+							<div class="file-info">
+								<span class="file-name">${escapeHtml((m.filename as string) || "Archivo")}</span>
+								${size ? `<span class="file-size">${size}</span>` : ""}
+							</div>
+						</a>`;
+				}).join("")
+				: "";
+
 			container.innerHTML = `
-				<nav class="breadcrumb"><a href="${url("")}">Recursos</a> / ${r.title}</nav>
-				<div class="title-row">
-					<h1>${r.title}</h1>
-					${editButton}
+				<nav class="breadcrumb">
+					<a href="${url("")}">Catalogo</a>
+					<span class="sep">/</span>
+					<span>${escapeHtml(r.title)}</span>
+				</nav>
+
+				<div class="detail-header">
+					<div class="detail-icon">${icon}</div>
+					<div class="detail-title-area">
+						<h1>${escapeHtml(r.title)}</h1>
+						<div class="detail-pills">
+							<span class="pill pill-type">${escapeHtml(r.resourceType)}</span>
+							<span class="pill pill-lang">${escapeHtml((r.language || "").toUpperCase())}</span>
+							<span class="pill pill-license">${escapeHtml(r.license)}</span>
+							<span class="pill ${st.cssClass}">${st.label}</span>
+						</div>
+					</div>
+					${editBtn}
 				</div>
-				<div class="meta">
-					<span class="badge">${r.resourceType}</span>
-					<span class="badge badge-${status}">${statusLabel}</span>
-					<span>${r.language}</span>
-					<span>${r.license}</span>
+
+				<div class="detail-content">
+					<div class="detail-main">
+						<section class="description-section">
+							<h2>Descripcion</h2>
+							<p>${escapeHtml(r.description)}</p>
+						</section>
+
+						${keywords ? `
+						<section class="keywords-section">
+							<h2>Palabras clave</h2>
+							<div class="keywords-list">${keywords}</div>
+						</section>` : ""}
+
+						${attachments ? `
+						<section class="files-section">
+							<h2>Archivos adjuntos</h2>
+							<div class="files-grid">${attachments}</div>
+						</section>` : ""}
+					</div>
+
+					<aside class="detail-sidebar">
+						<div class="meta-card">
+							<h3>Informacion</h3>
+							<dl class="meta-list">
+								${r.author || r.createdByName ? `<dt>Autor</dt><dd>${escapeHtml(r.createdByName || r.author || "")}</dd>` : ""}
+								${r.publisher ? `<dt>Editor</dt><dd>${escapeHtml(r.publisher)}</dd>` : ""}
+								<dt>Idioma</dt><dd>${escapeHtml(r.language)}</dd>
+								<dt>Licencia</dt><dd>${escapeHtml(r.license)}</dd>
+								<dt>Tipo</dt><dd>${escapeHtml(r.resourceType)}</dd>
+								${date ? `<dt>Publicado</dt><dd>${date}</dd>` : ""}
+								${r.subjects?.length ? `<dt>Materias</dt><dd>${r.subjects.map((s: string) => escapeHtml(s)).join(", ")}</dd>` : ""}
+								${r.levels?.length ? `<dt>Niveles</dt><dd>${r.levels.map((l: string) => escapeHtml(l)).join(", ")}</dd>` : ""}
+							</dl>
+						</div>
+					</aside>
 				</div>
-				<p class="description">${r.description}</p>
-				${r.createdByName ? `<p class="field"><strong>Autor:</strong> ${r.createdByName}</p>` : (r.author ? `<p class="field"><strong>Autor:</strong> ${r.author}</p>` : "")}
-				${r.publisher ? `<p class="field"><strong>Editor:</strong> ${r.publisher}</p>` : ""}
-				${r.keywords ? `<p class="field"><strong>Palabras clave:</strong> ${r.keywords}</p>` : ""}
-				${r.subjects?.length ? `<p class="field"><strong>Materias:</strong> ${r.subjects.join(", ")}</p>` : ""}
-				${r.levels?.length ? `<p class="field"><strong>Niveles:</strong> ${r.levels.join(", ")}</p>` : ""}
-				${attachments}
 			`;
 		} catch {
-			container.innerHTML = "<p>Error al cargar el recurso.</p>";
+			container.innerHTML = `<p class="empty-state">Error al cargar el recurso. <a href="${url("")}">Volver al catalogo</a></p>`;
 		}
 	}
 
 	loadResource();
 </script>
 
-<style>
-	.breadcrumb { color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem; }
+<style is:global>
+	.detail-page { max-width: 960px; margin: 0 auto; }
+
+	.breadcrumb { color: #6b7280; font-size: 0.85rem; margin-bottom: 1.25rem; }
 	.breadcrumb a { color: #1a56db; text-decoration: none; }
-	.title-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
-	.title-row h1 { margin-bottom: 0; flex: 1; }
-	.btn-edit {
-		display: inline-block; padding: 0.4rem 1rem; background: #1a56db; color: white;
-		text-decoration: none; border-radius: 4px; font-size: 0.85rem; font-weight: 600;
-		white-space: nowrap;
-	}
-	.btn-edit:hover { background: #1e40af; }
-	h1 { margin-bottom: 0.75rem; }
-	.meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; color: #6b7280; font-size: 0.85rem; }
-	.badge { padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; background: #e5e7eb; color: #374151; }
-	.badge-draft { background: #fee2e2; color: #991b1b; }
-	.badge-review { background: #fef3c7; color: #92400e; }
-	.badge-published { background: #d1fae5; color: #065f46; }
-	.badge-archived { background: #e5e7eb; color: #374151; }
-	.description { font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; }
-	.field { margin: 0.25rem 0; font-size: 0.9rem; }
-	.attachments { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid #e5e7eb; }
-	.attachments h2 { margin: 0 0 0.75rem; font-size: 1.1rem; }
-	.attachment-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
-	.attachment-item { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: baseline; }
-	.attachment-link { color: #1a56db; font-weight: 600; text-decoration: none; }
-	.attachment-link:hover { text-decoration: underline; }
-	.attachment-meta { color: #6b7280; font-size: 0.85rem; }
+	.breadcrumb a:hover { text-decoration: underline; }
+	.breadcrumb .sep { margin: 0 0.4rem; color: #d1d5db; }
+
+	.detail-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; }
+	.detail-icon { font-size: 3rem; line-height: 1; flex-shrink: 0; }
+	.detail-title-area { flex: 1; }
+	.detail-title-area h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; color: #111827; line-height: 1.3; }
+	.detail-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+	.pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+	.pill-type { background: #ede9fe; color: #6d28d9; }
+	.pill-lang { background: #dbeafe; color: #1e40af; }
+	.pill-license { background: #d1fae5; color: #065f46; }
+	.pill-status-draft { background: #fee2e2; color: #991b1b; }
+	.pill-status-review { background: #fef3c7; color: #92400e; }
+	.pill-status-published { background: #d1fae5; color: #065f46; }
+	.pill-status-archived { background: #e5e7eb; color: #374151; }
+
+	.edit-btn { display: inline-block; padding: 0.5rem 1.25rem; background: #1a56db; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; white-space: nowrap; align-self: center; }
+	.edit-btn:hover { background: #1e40af; }
+
+	.detail-content { display: grid; grid-template-columns: 1fr 280px; gap: 2rem; align-items: start; }
+
+	.detail-main section { margin-bottom: 2rem; }
+	.detail-main h2 { font-size: 1.1rem; font-weight: 600; color: #374151; margin-bottom: 0.75rem; padding-bottom: 0.4rem; border-bottom: 1px solid #f3f4f6; }
+	.description-section p { font-size: 1rem; line-height: 1.75; color: #374151; white-space: pre-line; }
+
+	.keywords-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+	.keyword { display: inline-block; padding: 0.2rem 0.6rem; background: #f3f4f6; border-radius: 999px; font-size: 0.8rem; color: #4b5563; }
+
+	.files-grid { display: grid; gap: 0.75rem; }
+	.file-card { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: inherit; transition: border-color 0.15s; }
+	.file-card:hover { border-color: #93c5fd; }
+	.file-icon { font-size: 1.5rem; }
+	.file-info { display: flex; flex-direction: column; }
+	.file-name { font-weight: 500; color: #1a56db; font-size: 0.9rem; }
+	.file-size { font-size: 0.75rem; color: #9ca3af; }
+
+	.detail-sidebar { position: sticky; top: 5rem; }
+	.meta-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; }
+	.meta-card h3 { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.75rem; color: #111827; }
+	.meta-list { margin: 0; }
+	.meta-list dt { font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.75rem; }
+	.meta-list dt:first-child { margin-top: 0; }
+	.meta-list dd { margin: 0.15rem 0 0; font-size: 0.9rem; color: #374151; }
+
+	.empty-state { text-align: center; padding: 3rem 1rem; color: #6b7280; }
+	.empty-state a { color: #1a56db; }
 	.loading { color: #9ca3af; }
+
+	@media (max-width: 768px) {
+		.detail-header { flex-direction: column; }
+		.detail-content { grid-template-columns: 1fr; }
+		.detail-sidebar { position: static; }
+	}
 </style>

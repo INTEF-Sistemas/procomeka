@@ -1,7 +1,9 @@
 /**
- * Preload para tests: espera a que PGlite inicialice las tablas
- * y crea usuarios de test necesarios.
+ * Preload para tests: fuerza PGlite en memoria para no contaminar
+ * la base de datos de desarrollo (local-data/).
  */
+process.env.PGLITE_DIR = "memory://";
+
 import { waitForDb, getDb } from "./db.ts";
 
 await waitForDb();

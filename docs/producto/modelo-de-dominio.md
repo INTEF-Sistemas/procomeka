@@ -2,7 +2,7 @@
 
 ## Estado
 
-Borrador v0. Este modelo es lógico, no físico. La implementación concreta depende de las ADRs de base de datos.
+Borrador v0.1 — actualizado 2026-03-28 para alinear con implementación (ADR-0009). Este modelo es lógico, no físico. La implementación concreta depende de las ADRs de base de datos.
 
 ---
 
@@ -25,8 +25,8 @@ type Resource = {
   language: string              // ISO 639-1, obligatorio
   license: License              // obligatorio
   resourceType: ResourceType    // obligatorio
-  educationalLevel: EducationalLevel[]  // obligatorio
-  subject: Subject[]            // obligatorio
+  educationalLevel?: EducationalLevel[]  // recomendado (obligatorio en fases posteriores)
+  subject?: Subject[]            // recomendado (obligatorio en fases posteriores)
   keywords: string[]
   author?: string
   publisher?: string
@@ -41,9 +41,9 @@ type Resource = {
 
   // Estado editorial
   editorialStatus: EditorialStatus
+  createdBy?: string             // FK a User, autor del recurso
   assignedCuratorId?: string
   curatedAt?: Date
-  featuredAt?: Date
 
   // Archivos y medios
   mediaItems: MediaItem[]
@@ -115,8 +115,10 @@ type User = {
 
 ### EditorialStatus
 ```
-borrador | en-revision | validado | destacado | archivado | rechazado
+draft | review | published | archived
 ```
+
+> Estados futuros (Fase 2): `featured`, `rejected`
 
 ### ResourceType
 ```
@@ -133,8 +135,7 @@ ensenanzas-especiales | universidad | formacion-adultos | sin-nivel
 
 ### License
 ```
-cc-by | cc-by-sa | cc-by-nc | cc-by-nc-sa | cc-by-nd | cc-by-nc-nd
-cc0 | copyright | otro
+cc-by | cc-by-sa | cc-by-nc | cc-by-nc-sa | cc-by-nd | cc-by-nc-nd | cc0
 ```
 
 ### UserRole

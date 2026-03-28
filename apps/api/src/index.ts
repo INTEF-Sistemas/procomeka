@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { auth } from "./auth/config.ts";
 import { type AuthEnv, sessionMiddleware } from "./auth/middleware.ts";
 import { publicRoutes } from "./routes/public.ts";
-import { adminRoutes } from "./routes/admin.ts";
+import { adminRoutes } from "./routes/admin/index.ts";
 import { devRoutes } from "./routes/dev.ts";
 import { uploadRoutes } from "./routes/uploads.ts";
 

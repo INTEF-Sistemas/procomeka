@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { validateTransition, TRANSITION_RULES, ROLE_LEVELS } from "./validation.ts";
+import { validateTransition, TRANSITION_RULES, ROLE_LEVELS } from "@procomeka/db/validation";
 
 describe("validateTransition", () => {
 	describe("author puede enviar a revisión", () => {

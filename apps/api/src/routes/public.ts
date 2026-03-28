@@ -1,20 +1,18 @@
 import { Hono } from "hono";
-import { listResources, getResourceBySlug } from "../resources/repository.ts";
 import { readUploadContent } from "./uploads.ts";
+import { parsePagination } from "../helpers.ts";
 import { getDb } from "../db.ts";
 import * as repo from "@procomeka/db/repository";
 
 const publicRoutes = new Hono();
 
 publicRoutes.get("/resources", async (c) => {
-	const limit = Number(c.req.query("limit") ?? "20");
-	const offset = Number(c.req.query("offset") ?? "0");
-	const search = c.req.query("q") ?? undefined;
+	const { limit, offset, search } = parsePagination(c);
 	const resourceType = c.req.query("resourceType") ?? undefined;
 	const language = c.req.query("language") ?? undefined;
 	const license = c.req.query("license") ?? undefined;
 
-	const result = await listResources({
+	const result = await repo.listResources(getDb().db, {
 		limit,
 		offset,
 		search,
@@ -28,7 +26,7 @@ publicRoutes.get("/resources", async (c) => {
 
 publicRoutes.get("/resources/:slug", async (c) => {
 	const { slug } = c.req.param();
-	const resource = await getResourceBySlug(slug);
+	const resource = await repo.getResourceBySlug(getDb().db, slug);
 	if (!resource || resource.editorialStatus !== "published") {
 		return c.json({ error: "Recurso no encontrado" }, 404);
 	}
@@ -59,6 +57,12 @@ publicRoutes.get("/uploads/:id/content", async (c) => {
 			"Content-Disposition": `attachment; filename="${session.originalFilename}"`,
 		},
 	});
+});
+
+publicRoutes.get("/taxonomies/:type", async (c) => {
+	const { type } = c.req.param();
+	const result = await repo.listTaxonomies(getDb().db, { type, limit: 100 });
+	return c.json(result.data);
 });
 
 publicRoutes.get("/collections", (c) =>

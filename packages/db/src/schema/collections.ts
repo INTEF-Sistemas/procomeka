@@ -18,7 +18,7 @@ export const collections = pgTable("collections", {
 	isOrdered: integer("is_ordered").notNull().default(0),
 	editorialStatus: varchar("editorial_status", { length: 50 })
 		.notNull()
-		.default("borrador"),
+		.default("draft"),
 	curatorId: text("curator_id")
 		.notNull()
 		.references(() => user.id),

@@ -3,7 +3,7 @@ import {
 	validateCreateResource,
 	validateUpdateResource,
 	validateStatus,
-} from "./validation.ts";
+} from "@procomeka/db/validation";
 
 const validPayload = {
 	title: "Recurso de ejemplo",

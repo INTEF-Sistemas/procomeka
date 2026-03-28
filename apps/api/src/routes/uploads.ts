@@ -92,7 +92,7 @@ async function getTusServer() {
 
 				const resourceId = upload.metadata.resourceId;
 				const originalFilename = upload.metadata.filename;
-				const mimeType = upload.metadata.mimeType ?? null;
+				const mimeType = upload.metadata.mimeType || "application/octet-stream";
 				const checksumAlgorithm = upload.metadata.checksumAlgorithm ?? null;
 				const finalChecksum = upload.metadata.finalChecksum ?? null;
 

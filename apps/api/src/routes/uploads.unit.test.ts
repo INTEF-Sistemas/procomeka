@@ -3,7 +3,7 @@ import { mkdtemp } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { Hono } from "hono";
-import { adminRoutes } from "./admin.ts";
+import { adminRoutes } from "./admin/index.ts";
 import { uploadRoutes } from "./uploads.ts";
 import type { AuthEnv } from "../auth/middleware.ts";
 import { getDb } from "../db.ts";

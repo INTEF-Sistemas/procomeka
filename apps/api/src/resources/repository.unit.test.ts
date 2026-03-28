@@ -1,15 +1,15 @@
 import { expect, test, describe } from "bun:test";
-import {
-	listResources,
-	getResourceById,
-	getResourceBySlug,
-	createResource,
-	updateResource,
-	deleteResource,
-	updateEditorialStatus,
-} from "./repository.ts";
 import { getDb } from "../db.ts";
 import * as repo from "@procomeka/db/repository";
+
+const db = () => getDb().db;
+const listResources = (opts: Parameters<typeof repo.listResources>[1]) => repo.listResources(db(), opts);
+const getResourceById = (id: string) => repo.getResourceById(db(), id);
+const getResourceBySlug = (slug: string) => repo.getResourceBySlug(db(), slug);
+const createResource = (data: Parameters<typeof repo.createResource>[1]) => repo.createResource(db(), data);
+const updateResource = (id: string, data: Parameters<typeof repo.updateResource>[2]) => repo.updateResource(db(), id, data);
+const deleteResource = (id: string) => repo.deleteResource(db(), id);
+const updateEditorialStatus = (id: string, status: string, curatorId: string) => repo.updateEditorialStatus(db(), id, status, curatorId);
 
 const baseResource = {
 	title: "Recurso test repo",

@@ -4,40 +4,43 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <AdminLayout title="Recursos" activeSection="resources">
-	<section class="page-head">
+	<section class="admin-page-head">
 		<div>
-			<p class="eyebrow">CRUD</p>
+			<p class="admin-eyebrow">Gestion</p>
 			<h1>Recursos</h1>
 		</div>
-		<a class="primary-link" href={`${base}admin/recursos/nuevo`}>Nuevo recurso</a>
+		<a class="admin-btn admin-btn--primary" href={`${base}admin/recursos/nuevo`}>+ Nuevo recurso</a>
 	</section>
 
-	<section class="toolbar">
+	<section class="admin-toolbar">
 		<label>
-			<span>Búsqueda</span>
-			<input id="search" type="search" placeholder="Título, descripción o autor" />
+			Busqueda
+			<input id="search" type="search" placeholder="Titulo, descripcion o autor" />
 		</label>
 		<label>
-			<span>Estado</span>
+			Estado
 			<select id="status-filter">
 				<option value="">Todos</option>
 				<option value="draft">Borrador</option>
-				<option value="review">En revisión</option>
+				<option value="review">En revision</option>
 				<option value="published">Publicado</option>
 				<option value="archived">Archivado</option>
 			</select>
 		</label>
-		<button id="apply-filters" type="button">Aplicar</button>
+		<button id="apply-filters" type="button" class="admin-btn">Aplicar</button>
 	</section>
 
-	<div id="list-status" class="list-status" aria-live="polite"></div>
-	<div class="table-wrap">
+	<div id="list-status" class="admin-list-status" aria-live="polite"></div>
+
+	<div class="admin-table-wrap">
 		<table>
 			<thead>
 				<tr>
-					<th>Título</th>
-					<th>Autoría</th>
+					<th>Titulo</th>
+					<th>Tipo</th>
+					<th>Idioma</th>
 					<th>Estado</th>
+					<th>Autoria</th>
 					<th>Actualizado</th>
 					<th>Acciones</th>
 				</tr>
@@ -45,11 +48,22 @@ const base = import.meta.env.BASE_URL;
 			<tbody id="resources-body"></tbody>
 		</table>
 	</div>
-	<div class="pager">
-		<button id="prev-page" type="button">Anterior</button>
-		<span id="page-label">Página 1</span>
-		<button id="next-page" type="button">Siguiente</button>
+
+	<div class="admin-pager">
+		<button id="prev-page" type="button" disabled>Anterior</button>
+		<span id="page-label" class="admin-pager-label">Pagina 1</span>
+		<button id="next-page" type="button" disabled>Siguiente</button>
 	</div>
+
+	<dialog id="confirm-dialog" class="admin-confirm-dialog">
+		<form method="dialog">
+			<p id="confirm-message">Seguro que deseas eliminar este recurso?</p>
+			<div class="admin-dialog-actions">
+				<button value="cancel" class="admin-btn">Cancelar</button>
+				<button value="confirm" class="admin-btn admin-btn--danger">Eliminar</button>
+			</div>
+		</form>
+	</dialog>
 </AdminLayout>
 
 <script>
@@ -63,13 +77,42 @@ const base = import.meta.env.BASE_URL;
 	const nextBtn = document.getElementById("next-page") as HTMLButtonElement;
 	const searchInput = document.getElementById("search") as HTMLInputElement;
 	const statusFilter = document.getElementById("status-filter") as HTMLSelectElement;
+	const confirmDialog = document.getElementById("confirm-dialog") as HTMLDialogElement;
+	const confirmMessage = document.getElementById("confirm-message") as HTMLParagraphElement;
 
 	let offset = 0;
 	const limit = 10;
 	let total = 0;
+	let pendingDeleteId: string | null = null;
+
+	function badgeClass(status: string): string {
+		const map: Record<string, string> = {
+			draft: "admin-badge--draft",
+			review: "admin-badge--review",
+			published: "admin-badge--published",
+			archived: "admin-badge--archived",
+		};
+		return map[status] ?? "";
+	}
+
+	function statusLabel(status: string): string {
+		const map: Record<string, string> = {
+			draft: "Borrador",
+			review: "En revision",
+			published: "Publicado",
+			archived: "Archivado",
+		};
+		return map[status] ?? status;
+	}
+
+	function escapeHtml(str: string): string {
+		const d = document.createElement("div");
+		d.textContent = str;
+		return d.innerHTML;
+	}
 
 	async function loadResources() {
-		statusBox.textContent = "Cargando recursos…";
+		statusBox.textContent = "Cargando recursos...";
 		const api = await getApiClient();
 		const result = await api.listAdminResources({
 			q: searchInput.value || undefined,
@@ -78,51 +121,80 @@ const base = import.meta.env.BASE_URL;
 			status: statusFilter.value || undefined,
 		});
 		total = result.total;
-		pageLabel.textContent = `Página ${Math.floor(offset / limit) + 1}`;
-		prevBtn.disabled = offset === 0;
-		nextBtn.disabled = offset + limit >= total;
+
+		const pager = document.querySelector(".admin-pager") as HTMLElement;
+		if (total <= limit) {
+			pager.hidden = true;
+		} else {
+			pager.hidden = false;
+			const page = Math.floor(offset / limit) + 1;
+			const totalPages = Math.ceil(total / limit);
+			pageLabel.textContent = `Pagina ${page} de ${totalPages}`;
+			prevBtn.disabled = offset === 0;
+			nextBtn.disabled = offset + limit >= total;
+		}
 
 		if (!result.data.length) {
-			tbody.innerHTML = `<tr><td colspan="5">No hay recursos para los filtros actuales.</td></tr>`;
-			statusBox.textContent = `${total} recursos visibles`;
+			tbody.innerHTML = `<tr class="admin-empty-row"><td colspan="7">No hay recursos para los filtros actuales.</td></tr>`;
+			statusBox.textContent = `${total} recursos encontrados`;
 			return;
 		}
 
-		tbody.innerHTML = result.data.map((resource) => `
+		tbody.innerHTML = result.data.map((r) => `
 			<tr>
-				<td>${resource.title}</td>
-				<td>${resource.createdByName ?? resource.author ?? "Sin autoría"}</td>
-				<td>${resource.editorialStatus}</td>
-				<td>${resource.updatedAt ? new Date(resource.updatedAt).toLocaleDateString("es-ES") : "-"}</td>
-				<td>
-					<a href="${url(`admin/recursos/editar?id=${resource.id}`)}">Editar</a>
-					<button type="button" data-delete-id="${resource.id}">Eliminar</button>
+				<td>${escapeHtml(r.title)}</td>
+				<td>${escapeHtml(r.resourceType ?? "-")}</td>
+				<td>${escapeHtml(r.language ?? "-")}</td>
+				<td><span class="admin-badge ${badgeClass(r.editorialStatus)}">${statusLabel(r.editorialStatus)}</span></td>
+				<td>${escapeHtml(r.createdByName ?? r.author ?? "Sin autoria")}</td>
+				<td>${r.updatedAt ? new Date(r.updatedAt).toLocaleDateString("es-ES") : "-"}</td>
+				<td class="actions-cell">
+					<a href="${url(`admin/recursos/editar?id=${r.id}`)}" class="admin-btn admin-btn--sm">Editar</a>
+					<button type="button" class="admin-btn admin-btn--sm admin-btn--danger" data-delete-id="${r.id}" data-delete-title="${escapeHtml(r.title)}">Eliminar</button>
 				</td>
 			</tr>
 		`).join("");
 
 		tbody.querySelectorAll("[data-delete-id]").forEach((button) => {
-			button.addEventListener("click", async () => {
-				const id = (button as HTMLButtonElement).dataset.deleteId;
-				if (!id) return;
-				if (!confirm("¿Eliminar este recurso?")) return;
-				const api = await getApiClient();
-				await api.deleteResource(id);
-				loadResources();
+			button.addEventListener("click", () => {
+				const btn = button as HTMLButtonElement;
+				pendingDeleteId = btn.dataset.deleteId ?? null;
+				const title = btn.dataset.deleteTitle ?? "este recurso";
+				confirmMessage.textContent = `Seguro que deseas eliminar "${title}"?`;
+				confirmDialog.showModal();
 			});
 		});
 
-		statusBox.textContent = `${total} recursos visibles`;
+		statusBox.textContent = `${total} recursos encontrados`;
 	}
+
+	confirmDialog.addEventListener("close", async () => {
+		if (confirmDialog.returnValue === "confirm" && pendingDeleteId) {
+			const api = await getApiClient();
+			await api.deleteResource(pendingDeleteId);
+			pendingDeleteId = null;
+			loadResources();
+		}
+		pendingDeleteId = null;
+	});
 
 	document.getElementById("apply-filters")?.addEventListener("click", () => {
 		offset = 0;
 		loadResources();
 	});
+
+	searchInput.addEventListener("keydown", (e) => {
+		if (e.key === "Enter") {
+			offset = 0;
+			loadResources();
+		}
+	});
+
 	prevBtn.addEventListener("click", () => {
 		offset = Math.max(0, offset - limit);
 		loadResources();
 	});
+
 	nextBtn.addEventListener("click", () => {
 		offset += limit;
 		loadResources();
@@ -132,33 +204,3 @@ const base = import.meta.env.BASE_URL;
 		window.location.href = url("login");
 	});
 </script>
-
-<style>
-	.page-head, .toolbar, .pager {
-		display: flex;
-		gap: 1rem;
-		align-items: end;
-		justify-content: space-between;
-		flex-wrap: wrap;
-	}
-
-	.eyebrow { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #2b6cb0; font-weight: 700; }
-	.primary-link {
-		background: #1a365d;
-		color: white;
-		padding: 0.7rem 1rem;
-		border-radius: 10px;
-		text-decoration: none;
-		font-weight: 600;
-	}
-
-	.toolbar { margin: 1.5rem 0 1rem; }
-	label span { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.2rem; }
-	input, select, button { padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid #cbd5e0; }
-	button { cursor: pointer; }
-	.table-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
-	table { width: 100%; border-collapse: collapse; }
-	th, td { padding: 0.85rem; border-bottom: 1px solid #edf2f7; text-align: left; }
-	.list-status { color: #4a5568; margin-bottom: 0.75rem; }
-	.pager { margin-top: 1rem; }
-</style>

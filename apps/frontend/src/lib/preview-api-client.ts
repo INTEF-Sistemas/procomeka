@@ -240,13 +240,17 @@ export class PreviewApiClient implements ApiClient {
 		return null;
 	}
 
-	async listResourceMediaItems(_id: string): Promise<MediaItemRecord[]> {
-		return [];
+	async listResourceMediaItems(resourceId: string): Promise<MediaItemRecord[]> {
+		const { listMediaItemsForResource } = await import("@procomeka/db/repository");
+		return listMediaItemsForResource(this.db, resourceId);
 	}
 
-	async listResourceUploads(_id: string): Promise<UploadSessionRecord[]> {
-		return [];
+	async listResourceUploads(resourceId: string): Promise<UploadSessionRecord[]> {
+		const { listUploadSessionsForResource } = await import("@procomeka/db/repository");
+		return listUploadSessionsForResource(this.db, resourceId);
 	}
+
+	getDb() { return this.db; }
 
 	async createResource(data: CreateResourceInput): Promise<{ id: string; slug: string }> {
 		const { validateCreateResource } = await import("@procomeka/db/validation");
@@ -297,19 +301,35 @@ export class PreviewApiClient implements ApiClient {
 
 	async getUploadConfig(): Promise<UploadConfig> {
 		return {
-			maxFileSizeBytes: 0,
-			maxFilesPerBatch: 0,
-			maxConcurrentPerUser: 0,
-			chunkSizeBytes: 0,
-			sessionTtlMs: 0,
-			allowedMimeTypes: [],
-			allowedExtensions: [],
-			storageDir: "preview-disabled",
+			maxFileSizeBytes: 50 * 1024 * 1024,
+			maxFilesPerBatch: 10,
+			maxConcurrentPerUser: 3,
+			chunkSizeBytes: 5 * 1024 * 1024,
+			sessionTtlMs: 86400000,
+			allowedMimeTypes: [
+				"application/octet-stream",
+				"application/pdf", "application/msword",
+				"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				"application/vnd.ms-powerpoint",
+				"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+				"application/zip", "application/x-zip-compressed",
+				"application/json", "text/csv",
+				"video/mp4", "audio/mpeg", "audio/wav",
+				"image/png", "image/jpeg", "image/gif", "image/webp",
+			],
+			allowedExtensions: [
+				".pdf", ".doc", ".docx", ".ppt", ".pptx",
+				".zip", ".scorm", ".elp", ".elpx",
+				".mp4", ".mp3", ".wav",
+				".png", ".jpg", ".jpeg", ".gif", ".webp",
+				".csv", ".json",
+			],
+			storageDir: "preview-memory",
 		};
 	}
 
-	async cancelUpload(_id: string): Promise<{ id: string; cancelled: boolean }> {
-		throw new Error("Uploads no disponibles en modo preview");
+	async cancelUpload(id: string): Promise<{ id: string; cancelled: boolean }> {
+		return { id, cancelled: true };
 	}
 
 	async listUsers(opts?: { q?: string; role?: string; limit?: number; offset?: number }) {
@@ -441,6 +461,11 @@ export class PreviewApiClient implements ApiClient {
 
 	getCurrentRole(): string {
 		return this.currentUser.role;
+	}
+
+	// biome-ignore lint: dynamic drizzle pglite types
+	static getPreviewDb(): any {
+		return PreviewApiClient._instance?.db ?? null;
 	}
 
 	async resetDatabase() {

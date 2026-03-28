@@ -5,7 +5,7 @@ Debéis leer este archivo antes de comenzar cualquier tarea para entender el con
 
 ## Fase Actual: Fase 1 — MVP de catálogo
 
-- **Épica activa:** Catálogo MVP operativo en desarrollo; flujo editorial completado; siguiente foco recomendado: búsqueda avanzada/facetas + colecciones reales
+- **Épica activa:** Catalogo MVP operativo; flujo editorial completo; busqueda facetada implementada; backoffice con CRUD unificado; entidades (tipos, idiomas, licencias) gestionables desde admin; uploads con IndexedDB en preview mode
 - **Agente en turno:** @.agents/skills/documentacion-y-roadmap/SKILL.md
 
 ## ADRs Bloqueantes (Prioridad Alta)
@@ -416,3 +416,62 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-28 | `@.agents/skills/backend-api-servicios` + `@.agents/skills/frontend-ux-accesibilidad` | Resolución de comentarios de revisión en PR #49 | Completado |
+
+## Actualización 2026-03-28 (Refactorizacion integral — PR #52)
+
+- **Agente en turno:** Equipo multiagente de auditoria y refactorizacion
+- **Accion realizada:** Refactorizacion completa del repositorio cubriendo arquitectura, entidades, API, frontend, skills y testing.
+
+### Arquitectura de codigo
+- `admin.ts` (585 lineas) partido en 5 modulos por dominio bajo `routes/admin/`
+- `ROLE_LEVELS` consolidado de 3 copias a 1 fuente canonica en `@procomeka/db/validation`
+- CRUD route builder generico (`buildCrudRoutes`) elimina ~50% del boilerplate de rutas admin
+- Helpers compartidos extraidos: `parsePagination`, `ensureCurrentUser`, `requireOwnedResource`
+- Eliminados wrappers innecesarios: `resources/validation.ts`, `resources/repository.ts`
+
+### Entidades y esquemas
+- Default de colecciones corregido: `borrador` -> `draft`
+- FK self-referencing en `taxonomies.parentId` con ON DELETE SET NULL
+- Tipos de recurso, idiomas y licencias ahora son taxonomias gestionables desde admin
+- CRUD faltantes: `deleteMediaItem`, `addResourceToCollection`, `removeResourceFromCollection`, `listCollectionResources`
+- `VALID_TAXONOMY_TYPES` con validacion
+- `ensureUser` simplificado: INSERT ON CONFLICT DO NOTHING
+
+### API
+- `requireRole` middleware reemplaza 33 checks inline de `hasMinRole`
+- Validacion de role en PATCH users (previene roles arbitrarios)
+- Fallback MIME `application/octet-stream` para archivos sin tipo detectado
+- Extensiones `.elp`/`.elpx` permitidas
+- `tsc --noEmit` en CI pipeline
+- Endpoint publico `GET /api/v1/taxonomies/:type` para filtros dinamicos
+
+### Frontend
+- Catalogo publico: sidebar facetada, grid/list toggle, paginacion numerada
+- Vista de detalle: layout 2 columnas con sidebar de metadatos, pills, tarjetas de archivos
+- Admin: CSS unificado en AdminLayout, dialogos nativos, badges de estado
+- Logica extraida a `catalog-controller.ts` y `resource-display.ts`
+- Filtros cargados dinamicamente desde API con fallback a hardcoded
+- Uploads en preview mode via IndexedDB (ADR-0012)
+
+### Skills
+- 20 -> 16 skills (4 duplicados fusionados en roles base)
+- 9 skills mejorados con documentacion oficial via Context7
+
+### Testing
+- Tests de permisos: 5 `toBeDefined` -> 19 assertions de comportamiento
+- Tests CRUD para colecciones, taxonomias, usuarios
+- PGlite `memory://` para aislamiento de tests
+- Dependencias fijadas (sin `^` ni `latest`)
+
+### Documentacion
+- Modelo de dominio v0.1 reconciliado con implementacion
+- ADR-0012: uploads en preview mode con IndexedDB
+
+### Validacion
+- `make test`: 204 tests, 0 fail, 92.59% cobertura
+- `make up`: catalogo publico y admin funcionales
+- `make up-static`: preview mode con uploads IndexedDB
+
+| Fecha | Agente | Accion / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | Equipo multiagente | Refactorizacion integral: arquitectura, entidades, API, frontend, skills, testing, documentacion (PR #52) | Completado |

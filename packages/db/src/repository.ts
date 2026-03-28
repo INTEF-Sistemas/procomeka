@@ -10,7 +10,7 @@ import {
 	resourceLevels,
 	mediaItems,
 } from "./schema/resources.ts";
-import { collections } from "./schema/collections.ts";
+import { collections, collectionResources } from "./schema/collections.ts";
 import { user } from "./schema/auth.ts";
 import { taxonomies } from "./schema/taxonomies.ts";
 import { uploadSessions } from "./schema/uploads.ts";
@@ -412,16 +412,16 @@ export async function createUploadSession(
 		resourceId: data.resourceId,
 		ownerId: data.ownerId,
 		originalFilename: data.originalFilename,
-		mimeType: data.mimeType ?? null,
 		storageKey: data.storageKey,
-		checksumAlgorithm: data.checksumAlgorithm ?? null,
-		finalChecksum: data.finalChecksum ?? null,
-		declaredSize: data.declaredSize ?? null,
-		expiresAt: data.expiresAt ?? null,
 		status: "created",
 		receivedBytes: 0,
 		createdAt: new Date(),
 		updatedAt: new Date(),
+		...(data.mimeType ? { mimeType: data.mimeType } : {}),
+		...(data.checksumAlgorithm ? { checksumAlgorithm: data.checksumAlgorithm } : {}),
+		...(data.finalChecksum ? { finalChecksum: data.finalChecksum } : {}),
+		...(data.declaredSize != null ? { declaredSize: data.declaredSize } : {}),
+		...(data.expiresAt ? { expiresAt: data.expiresAt } : {}),
 	});
 }
 
@@ -512,7 +512,7 @@ export async function completeUploadSession(
 			receivedBytes: data.receivedBytes,
 			publicUrl: data.publicUrl,
 			mediaItemId: data.mediaItemId,
-			finalChecksum: data.finalChecksum ?? null,
+			finalChecksum: data.finalChecksum || null,
 			completedAt: new Date(),
 			updatedAt: new Date(),
 		})
@@ -609,9 +609,6 @@ export async function ensureUser(
 	db: DrizzleDB,
 	data: { id: string; email: string; name?: string | null; role?: string },
 ) {
-	const existing = await getUserById(db, data.id);
-	if (existing) return existing;
-
 	await db.insert(user).values({
 		id: data.id,
 		email: data.email,
@@ -621,7 +618,7 @@ export async function ensureUser(
 		isActive: true,
 		createdAt: new Date(),
 		updatedAt: new Date(),
-	});
+	}).onConflictDoNothing();
 
 	return getUserById(db, data.id);
 }
@@ -850,4 +847,64 @@ export async function updateTaxonomy(
 
 export async function deleteTaxonomy(db: DrizzleDB, id: string) {
 	await db.delete(taxonomies).where(eq(taxonomies.id, id));
+}
+
+// --- Media Items ---
+
+export async function deleteMediaItem(db: DrizzleDB, id: string) {
+	await db.delete(mediaItems).where(eq(mediaItems.id, id));
+}
+
+// --- Collection Resources ---
+
+export async function addResourceToCollection(
+	db: DrizzleDB,
+	collectionId: string,
+	resourceId: string,
+	position?: number,
+) {
+	await db.insert(collectionResources).values({
+		collectionId,
+		resourceId,
+		position: position ?? 0,
+	}).onConflictDoNothing();
+}
+
+export async function removeResourceFromCollection(
+	db: DrizzleDB,
+	collectionId: string,
+	resourceId: string,
+) {
+	await db
+		.delete(collectionResources)
+		.where(
+			and(
+				eq(collectionResources.collectionId, collectionId),
+				eq(collectionResources.resourceId, resourceId),
+			),
+		);
+}
+
+export async function listCollectionResources(
+	db: DrizzleDB,
+	collectionId: string,
+	opts: { limit?: number; offset?: number } = {},
+) {
+	const limit = Math.min(opts.limit ?? 100, 100);
+	const offset = opts.offset ?? 0;
+
+	return db
+		.select({
+			resourceId: collectionResources.resourceId,
+			position: collectionResources.position,
+			title: resources.title,
+			slug: resources.slug,
+			editorialStatus: resources.editorialStatus,
+		})
+		.from(collectionResources)
+		.innerJoin(resources, eq(collectionResources.resourceId, resources.id))
+		.where(eq(collectionResources.collectionId, collectionId))
+		.orderBy(asc(collectionResources.position))
+		.limit(limit)
+		.offset(offset);
 }

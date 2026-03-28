@@ -8,6 +8,7 @@ interface Props {
 const { title } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
+const hasHeaderCenter = Astro.slots.has("header-center");
 ---
 
 <!doctype html>
@@ -23,11 +24,16 @@ const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 	</head>
 	<body class={isPreview ? "has-preview-banner" : ""}>
 		<header>
-			<nav>
+			<nav class={hasHeaderCenter ? "nav-with-center" : ""}>
 				<a href={base} class="brand">Procomeka</a>
+				{hasHeaderCenter && (
+					<div class="nav-center">
+						<slot name="header-center" />
+					</div>
+				)}
 				<div class="nav-links">
 					<a href={`${base}admin/recursos/nuevo`}>Crear recurso</a>
-					<a id="nav-login" href={`${base}login`}>Iniciar sesión</a>
+					<a id="nav-login" href={`${base}login`}>Iniciar sesion</a>
 					<a id="nav-user" href={`${base}dashboard`} style="display:none;"></a>
 				</div>
 			</nav>
@@ -55,7 +61,7 @@ const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 						navUser.style.display = "";
 					}
 				} catch {
-					// Sin sesión: se queda "Iniciar sesión"
+					// Sin sesion: se queda "Iniciar sesion"
 				}
 			})();
 		</script>
@@ -88,8 +94,12 @@ const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		max-width: 960px;
+		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	nav.nav-with-center {
+		gap: 1rem;
 	}
 
 	.brand {
@@ -97,11 +107,18 @@ const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 		font-size: 1.1rem;
 		text-decoration: none;
 		color: #1f2937;
+		white-space: nowrap;
+	}
+
+	.nav-center {
+		flex: 1;
+		max-width: 480px;
 	}
 
 	.nav-links {
 		display: flex;
 		gap: 1rem;
+		white-space: nowrap;
 	}
 
 	.nav-links a {
@@ -115,7 +132,7 @@ const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 	}
 
 	main {
-		max-width: 960px;
+		max-width: 1200px;
 		margin: 0 auto;
 		padding: 1.5rem;
 	}
@@ -127,5 +144,17 @@ const isPreview = import.meta.env.PUBLIC_PREVIEW_MODE === "true";
 		color: #6b7280;
 		font-size: 0.85rem;
 		margin-top: 3rem;
+	}
+
+	@media (max-width: 768px) {
+		nav.nav-with-center {
+			flex-wrap: wrap;
+		}
+
+		.nav-center {
+			order: 3;
+			max-width: 100%;
+			flex-basis: 100%;
+		}
 	}
 </style>

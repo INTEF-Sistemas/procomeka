@@ -1,7 +1,7 @@
 import { expect, test, describe } from "bun:test";
 import { Hono } from "hono";
 import type { AuthEnv } from "../auth/middleware.ts";
-import { adminRoutes } from "./admin.ts";
+import { adminRoutes } from "./admin/index.ts";
 
 function createAdminApp(mockUser: Record<string, unknown> | null = null) {
 	const app = new Hono<AuthEnv>();
@@ -387,5 +387,178 @@ describe("Rutas admin — RBAC por rol", () => {
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.data.every((item: { createdBy: string | null }) => item.createdBy === "author-1")).toBe(true);
+	});
+});
+
+describe("Rutas admin — usuarios", () => {
+	const app = createAdminApp({ id: "1", role: "admin", email: "admin@test.com", name: "Admin" });
+
+	test("GET /api/admin/users → 200 lista usuarios", async () => {
+		const res = await app.request("/api/admin/users");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data).toBeDefined();
+		expect(typeof body.total).toBe("number");
+	});
+
+	test("GET /api/admin/users/:id → 200 con usuario propio", async () => {
+		const res = await app.request("/api/admin/users/1");
+		expect(res.status).toBe(200);
+	});
+
+	test("GET /api/admin/users/:id → 404 con id inexistente", async () => {
+		const res = await app.request("/api/admin/users/no-existe-xyz");
+		expect(res.status).toBe(404);
+	});
+
+	test("non-admin solo ve su propio perfil", async () => {
+		const authorApp = createAdminApp({ id: "author-u", role: "author", email: "author-u@test.com", name: "Author" });
+		const res = await authorApp.request("/api/admin/users");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.total).toBe(1);
+	});
+
+	test("non-admin no puede ver otros usuarios", async () => {
+		const authorApp = createAdminApp({ id: "author-u2", role: "author" });
+		const res = await authorApp.request("/api/admin/users/1");
+		expect(res.status).toBe(403);
+	});
+});
+
+describe("Rutas admin — colecciones", () => {
+	const app = createAdminApp({ id: "1", role: "admin", email: "admin@test.com", name: "Admin" });
+
+	test("GET /api/admin/collections → 200 lista colecciones", async () => {
+		const res = await app.request("/api/admin/collections");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data).toBeDefined();
+	});
+
+	test("POST /api/admin/collections → 201 con body válido", async () => {
+		const res = await app.request("/api/admin/collections", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ title: "Mi colección", description: "Descripción de prueba" }),
+		});
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body.id).toBeDefined();
+	});
+
+	test("POST /api/admin/collections → 400 sin título", async () => {
+		const res = await app.request("/api/admin/collections", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ description: "Solo descripción" }),
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("CRUD completo de colección", async () => {
+		const createRes = await app.request("/api/admin/collections", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ title: "Colección CRUD", description: "Para test CRUD" }),
+		});
+		expect(createRes.status).toBe(201);
+		const { id } = await createRes.json();
+
+		const getRes = await app.request(`/api/admin/collections/${id}`);
+		expect(getRes.status).toBe(200);
+
+		const patchRes = await app.request(`/api/admin/collections/${id}`, {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ title: "Colección actualizada", description: "Desc actualizada" }),
+		});
+		expect(patchRes.status).toBe(200);
+
+		const deleteRes = await app.request(`/api/admin/collections/${id}`, { method: "DELETE" });
+		expect(deleteRes.status).toBe(200);
+	});
+
+	test("reader no puede acceder a colecciones", async () => {
+		const readerApp = createAdminApp({ id: "r1", role: "reader" });
+		const res = await readerApp.request("/api/admin/collections");
+		expect(res.status).toBe(403);
+	});
+});
+
+describe("Rutas admin — taxonomías", () => {
+	const app = createAdminApp({ id: "1", role: "admin" });
+
+	test("GET /api/admin/taxonomies → 200 lista taxonomías", async () => {
+		const res = await app.request("/api/admin/taxonomies");
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data).toBeDefined();
+	});
+
+	test("POST /api/admin/taxonomies → 201 con body válido", async () => {
+		const res = await app.request("/api/admin/taxonomies", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name: "Matemáticas", type: "subject" }),
+		});
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body.id).toBeDefined();
+	});
+
+	test("POST /api/admin/taxonomies → 400 sin nombre", async () => {
+		const res = await app.request("/api/admin/taxonomies", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ type: "subject" }),
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("CRUD completo de taxonomía", async () => {
+		const createRes = await app.request("/api/admin/taxonomies", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name: "Ciencias", type: "subject" }),
+		});
+		expect(createRes.status).toBe(201);
+		const { id } = await createRes.json();
+
+		const getRes = await app.request(`/api/admin/taxonomies/${id}`);
+		expect(getRes.status).toBe(200);
+
+		const patchRes = await app.request(`/api/admin/taxonomies/${id}`, {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name: "Ciencias Naturales" }),
+		});
+		expect(patchRes.status).toBe(200);
+
+		const deleteRes = await app.request(`/api/admin/taxonomies/${id}`, { method: "DELETE" });
+		expect(deleteRes.status).toBe(200);
+	});
+
+	test("author no puede acceder a taxonomías", async () => {
+		const authorApp = createAdminApp({ id: "a1", role: "author" });
+		const res = await authorApp.request("/api/admin/taxonomies");
+		expect(res.status).toBe(403);
+	});
+});
+
+describe("Rutas admin — actualización de usuarios", () => {
+	test("PATCH /api/admin/users/:id → 200 actualiza usuario", async () => {
+		const adminApp = createAdminApp({ id: "1", role: "admin" });
+		const usersRes = await adminApp.request("/api/admin/users");
+		const users = await usersRes.json();
+		if (users.data.length > 0) {
+			const userId = users.data[0].id;
+			const res = await adminApp.request(`/api/admin/users/${userId}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name: "Updated Name" }),
+			});
+			expect(res.status).toBe(200);
+		}
 	});
 });

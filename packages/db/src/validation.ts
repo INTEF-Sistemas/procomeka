@@ -1,3 +1,14 @@
+export const VALID_TAXONOMY_TYPES = [
+	"category",
+	"tag",
+	"subject",
+	"level",
+	"resource-type",
+	"language",
+	"license",
+] as const;
+export type TaxonomyType = (typeof VALID_TAXONOMY_TYPES)[number];
+
 export const VALID_STATUSES = [
 	"draft",
 	"review",
@@ -210,6 +221,36 @@ export function validateTransition(
 		};
 	}
 	return { valid: true, errors: [] };
+}
+
+export function validateCollection(body: unknown): ValidationResult {
+	const errors: ValidationError[] = [];
+	if (!body || typeof body !== "object") {
+		return { valid: false, errors: [{ field: "body", message: "El cuerpo de la petición es obligatorio" }] };
+	}
+	const b = body as Record<string, unknown>;
+	if (!isNonEmptyString(b.title)) {
+		errors.push({ field: "title", message: "El título es obligatorio" });
+	}
+	if (!isNonEmptyString(b.description)) {
+		errors.push({ field: "description", message: "La descripción es obligatoria" });
+	}
+	return { valid: errors.length === 0, errors };
+}
+
+export function validateTaxonomy(body: unknown): ValidationResult {
+	const errors: ValidationError[] = [];
+	if (!body || typeof body !== "object") {
+		return { valid: false, errors: [{ field: "body", message: "El cuerpo de la petición es obligatorio" }] };
+	}
+	const b = body as Record<string, unknown>;
+	if (!isNonEmptyString(b.name)) {
+		errors.push({ field: "name", message: "El nombre es obligatorio" });
+	}
+	if (b.type !== undefined && isNonEmptyString(b.type) && !VALID_TAXONOMY_TYPES.includes(b.type as TaxonomyType)) {
+		errors.push({ field: "type", message: `Tipo no válido. Valores permitidos: ${VALID_TAXONOMY_TYPES.join(", ")}` });
+	}
+	return { valid: errors.length === 0, errors };
 }
 
 export function validateStatus(status: unknown): ValidationResult {

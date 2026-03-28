@@ -1,5 +1,6 @@
 import type { Context, Next } from "hono";
 import { auth } from "./config.ts";
+import { ROLE_LEVELS } from "@procomeka/db/validation";
 
 type AuthUser = typeof auth.$Infer.Session.user;
 type AuthSession = typeof auth.$Infer.Session.session;
@@ -9,13 +10,6 @@ export type AuthEnv = {
 		user: AuthUser | null;
 		session: AuthSession | null;
 	};
-};
-
-const ROLE_HIERARCHY: Record<string, number> = {
-	reader: 0,
-	author: 1,
-	curator: 2,
-	admin: 3,
 };
 
 export async function sessionMiddleware(c: Context<AuthEnv>, next: Next) {
@@ -50,9 +44,9 @@ export async function requireAuth(c: Context<AuthEnv>, next: Next) {
 export function requireRole(...roles: string[]) {
 	const minLevel = Math.min(
 		...roles.map((r) => {
-			const level = ROLE_HIERARCHY[r];
+			const level = ROLE_LEVELS[r];
 			if (level === undefined) {
-				throw new Error(`requireRole: rol desconocido "${r}". Válidos: ${Object.keys(ROLE_HIERARCHY).join(", ")}`);
+				throw new Error(`requireRole: rol desconocido "${r}". Válidos: ${Object.keys(ROLE_LEVELS).join(", ")}`);
 			}
 			return level;
 		}),
@@ -65,7 +59,7 @@ export function requireRole(...roles: string[]) {
 		}
 
 		const userRole = (user as AuthUser & { role?: string }).role ?? "reader";
-		const userLevel = ROLE_HIERARCHY[userRole] ?? -1;
+		const userLevel = ROLE_LEVELS[userRole] ?? -1;
 
 		if (userLevel < minLevel) {
 			return c.json({ error: "Permisos insuficientes" }, 403);

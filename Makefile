@@ -31,7 +31,7 @@ build-preview:
 	@mkdir -p apps/frontend/.preview-serve/procomeka
 	@cp -r apps/frontend/dist/* apps/frontend/.preview-serve/procomeka/
 
-up-static: build-preview
+up-static: deps build-preview
 	@echo "Sirviendo preview estático en http://localhost:8080/procomeka/"
 	@cd apps/frontend/.preview-serve && python3 -m http.server 8080
 

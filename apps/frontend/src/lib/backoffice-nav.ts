@@ -5,6 +5,7 @@ export type BackofficeSection = {
 	label: string;
 	href: string;
 	minRole: BackofficeRole;
+	icon: string;
 };
 
 const ROLE_LEVELS: Record<BackofficeRole, number> = {
@@ -15,11 +16,11 @@ const ROLE_LEVELS: Record<BackofficeRole, number> = {
 };
 
 export const BACKOFFICE_SECTIONS: BackofficeSection[] = [
-	{ id: "dashboard", label: "Panel", href: "dashboard", minRole: "author" },
-	{ id: "resources", label: "Recursos", href: "admin/recursos", minRole: "author" },
-	{ id: "collections", label: "Colecciones", href: "admin/colecciones", minRole: "author" },
-	{ id: "taxonomies", label: "Categorías", href: "admin/categorias", minRole: "curator" },
-	{ id: "users", label: "Usuarios", href: "admin/usuarios", minRole: "admin" },
+	{ id: "dashboard", label: "Panel", href: "dashboard", minRole: "author", icon: "P" },
+	{ id: "resources", label: "Recursos", href: "admin/recursos", minRole: "author", icon: "R" },
+	{ id: "collections", label: "Colecciones", href: "admin/colecciones", minRole: "author", icon: "C" },
+	{ id: "taxonomies", label: "Categorias", href: "admin/categorias", minRole: "curator", icon: "T" },
+	{ id: "users", label: "Usuarios", href: "admin/usuarios", minRole: "admin", icon: "U" },
 ];
 
 export function canAccessSection(role: string | null | undefined, minRole: BackofficeRole): boolean {

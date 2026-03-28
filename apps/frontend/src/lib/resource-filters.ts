@@ -15,7 +15,7 @@ export const RESOURCE_TYPE_OPTIONS: FilterOption[] = [
 	{ value: "ejercicio", label: "Ejercicio" },
 	{ value: "evaluacion", label: "Evaluacion" },
 	{ value: "proyecto", label: "Proyecto" },
-] as const;
+];
 
 export const LANGUAGE_OPTIONS: FilterOption[] = [
 	{ value: "", label: "Todos los idiomas" },
@@ -28,7 +28,7 @@ export const LANGUAGE_OPTIONS: FilterOption[] = [
 	{ value: "pt", label: "Portugues" },
 	{ value: "de", label: "Aleman" },
 	{ value: "it", label: "Italiano" },
-] as const;
+];
 
 export const LICENSE_OPTIONS: FilterOption[] = [
 	{ value: "", label: "Todas las licencias" },
@@ -39,4 +39,24 @@ export const LICENSE_OPTIONS: FilterOption[] = [
 	{ value: "cc-by-nc-nd", label: "CC BY-NC-ND" },
 	{ value: "cc-by-nd", label: "CC BY-ND" },
 	{ value: "cc0", label: "CC0" },
-] as const;
+];
+
+const cache = new Map<string, FilterOption[]>();
+
+export async function loadFilterOptions(type: string, emptyLabel: string, fallback: FilterOption[]): Promise<FilterOption[]> {
+	if (cache.has(type)) return cache.get(type)!;
+	try {
+		const base = (window as Record<string, unknown>).__BASE_URL__ ?? "";
+		const res = await fetch(`${base}api/v1/taxonomies/${type}`);
+		if (!res.ok) return fallback;
+		const data: { slug: string; name: string }[] = await res.json();
+		const options: FilterOption[] = [
+			{ value: "", label: emptyLabel },
+			...data.map((t) => ({ value: t.slug, label: t.name })),
+		];
+		cache.set(type, options);
+		return options;
+	} catch {
+		return fallback;
+	}
+}

@@ -3,7 +3,6 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { app } from "./index.ts";
-import { createResource, updateEditorialStatus } from "./resources/repository.ts";
 import { getDb } from "./db.ts";
 import * as repo from "@procomeka/db/repository";
 
@@ -16,7 +15,7 @@ let publishedUploadId: string;
 beforeAll(async () => {
 	process.env.UPLOAD_STORAGE_DIR = await mkdtemp(path.join(tmpdir(), "procomeka-public-uploads-"));
 
-	const draft = await createResource({
+	const draft = await repo.createResource(getDb().db, {
 		title: "Recurso borrador test",
 		description: "Este recurso está en borrador",
 		language: "es",
@@ -25,7 +24,7 @@ beforeAll(async () => {
 	});
 	draftSlug = draft.slug;
 
-	const pub = await createResource({
+	const pub = await repo.createResource(getDb().db, {
 		title: "Recurso publicado test",
 		description: "Este recurso está publicado",
 		language: "es",
@@ -33,7 +32,7 @@ beforeAll(async () => {
 		resourceType: "documento",
 	});
 	publishedSlug = pub.slug;
-	await updateEditorialStatus(pub.id, "published", "system");
+	await repo.updateEditorialStatus(getDb().db, pub.id, "published", "system");
 	publishedUploadId = `public-upload-${crypto.randomUUID()}`;
 	await writeFile(path.join(process.env.UPLOAD_STORAGE_DIR!, publishedUploadId), "pdf de prueba");
 	await repo.ensureUser(getDb().db, {
@@ -66,7 +65,7 @@ beforeAll(async () => {
 		finalChecksum: "checksum",
 	});
 
-	const video = await createResource({
+	const video = await repo.createResource(getDb().db, {
 		title: "Video publicado test",
 		description: "Recurso de video publicado",
 		language: "es",
@@ -74,9 +73,9 @@ beforeAll(async () => {
 		resourceType: "video",
 	});
 	videoSlug = video.slug;
-	await updateEditorialStatus(video.id, "published", "system");
+	await repo.updateEditorialStatus(getDb().db, video.id, "published", "system");
 
-	const english = await createResource({
+	const english = await repo.createResource(getDb().db, {
 		title: "English lesson resource",
 		description: "Published english resource",
 		language: "en",
@@ -84,7 +83,7 @@ beforeAll(async () => {
 		resourceType: "documento",
 	});
 	englishSlug = english.slug;
-	await updateEditorialStatus(english.id, "published", "system");
+	await repo.updateEditorialStatus(getDb().db, english.id, "published", "system");
 });
 
 describe("Endpoints básicos", () => {

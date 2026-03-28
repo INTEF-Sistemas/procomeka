@@ -32,6 +32,10 @@ jobs:
     - name: Lint Check
       run: make lint
 
+    - name: Type Check
+      run: bunx tsc --noEmit
+      continue-on-error: true
+
     - name: Run Tests & Coverage
       run: make check-coverage
 

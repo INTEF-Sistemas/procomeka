@@ -126,7 +126,7 @@ export const SCHEMA_STATEMENTS = [
 		description TEXT NOT NULL,
 		cover_image_url TEXT,
 		is_ordered INTEGER NOT NULL DEFAULT 0,
-		editorial_status VARCHAR(50) NOT NULL DEFAULT 'borrador',
+		editorial_status VARCHAR(50) NOT NULL DEFAULT 'draft',
 		curator_id TEXT NOT NULL REFERENCES "user"(id),
 		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -141,7 +141,7 @@ export const SCHEMA_STATEMENTS = [
 		slug VARCHAR(255) NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		type VARCHAR(100) NOT NULL DEFAULT 'category',
-		parent_id TEXT,
+		parent_id TEXT REFERENCES taxonomies(id) ON DELETE SET NULL,
 		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 	)`,
@@ -158,8 +158,40 @@ export const SCHEMA_STATEMENTS = [
 	END $$`,
 ] as const;
 
+const SEED_TAXONOMIES = `
+INSERT INTO taxonomies (id, slug, name, type, created_at, updated_at) VALUES
+  ('rt-documento', 'documento', 'Documento', 'resource-type', NOW(), NOW()),
+  ('rt-presentacion', 'presentacion', 'Presentacion', 'resource-type', NOW(), NOW()),
+  ('rt-video', 'video', 'Video', 'resource-type', NOW(), NOW()),
+  ('rt-audio', 'audio', 'Audio', 'resource-type', NOW(), NOW()),
+  ('rt-imagen', 'imagen', 'Imagen', 'resource-type', NOW(), NOW()),
+  ('rt-actividad-interactiva', 'actividad-interactiva', 'Actividad interactiva', 'resource-type', NOW(), NOW()),
+  ('rt-secuencia-didactica', 'secuencia-didactica', 'Secuencia didactica', 'resource-type', NOW(), NOW()),
+  ('rt-ejercicio', 'ejercicio', 'Ejercicio', 'resource-type', NOW(), NOW()),
+  ('rt-evaluacion', 'evaluacion', 'Evaluacion', 'resource-type', NOW(), NOW()),
+  ('rt-proyecto', 'proyecto', 'Proyecto', 'resource-type', NOW(), NOW()),
+  ('lang-es', 'es', 'Espanol', 'language', NOW(), NOW()),
+  ('lang-en', 'en', 'Ingles', 'language', NOW(), NOW()),
+  ('lang-ca', 'ca', 'Catalan', 'language', NOW(), NOW()),
+  ('lang-eu', 'eu', 'Euskera', 'language', NOW(), NOW()),
+  ('lang-gl', 'gl', 'Gallego', 'language', NOW(), NOW()),
+  ('lang-fr', 'fr', 'Frances', 'language', NOW(), NOW()),
+  ('lang-pt', 'pt', 'Portugues', 'language', NOW(), NOW()),
+  ('lang-de', 'de', 'Aleman', 'language', NOW(), NOW()),
+  ('lang-it', 'it', 'Italiano', 'language', NOW(), NOW()),
+  ('lic-cc-by', 'cc-by', 'CC BY', 'license', NOW(), NOW()),
+  ('lic-cc-by-sa', 'cc-by-sa', 'CC BY-SA', 'license', NOW(), NOW()),
+  ('lic-cc-by-nc', 'cc-by-nc', 'CC BY-NC', 'license', NOW(), NOW()),
+  ('lic-cc-by-nc-sa', 'cc-by-nc-sa', 'CC BY-NC-SA', 'license', NOW(), NOW()),
+  ('lic-cc-by-nc-nd', 'cc-by-nc-nd', 'CC BY-NC-ND', 'license', NOW(), NOW()),
+  ('lic-cc-by-nd', 'cc-by-nd', 'CC BY-ND', 'license', NOW(), NOW()),
+  ('lic-cc0', 'cc0', 'CC0 (Dominio publico)', 'license', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING
+`;
+
 export async function createTables(executor: { exec: (sql: string) => Promise<unknown> }) {
 	for (const statement of SCHEMA_STATEMENTS) {
 		await executor.exec(statement);
 	}
+	await executor.exec(SEED_TAXONOMIES);
 }
