@@ -5,6 +5,7 @@ import { type AuthEnv, sessionMiddleware } from "./auth/middleware.ts";
 import { publicRoutes } from "./routes/public.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { devRoutes } from "./routes/dev.ts";
+import { uploadRoutes } from "./routes/uploads.ts";
 
 const app = new Hono<AuthEnv>();
 
@@ -22,6 +23,7 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 // Sesión en rutas admin y dev
 app.use("/api/admin/*", sessionMiddleware);
 app.use("/api/dev/*", sessionMiddleware);
+app.use("/api/uploads/*", sessionMiddleware);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 
@@ -44,6 +46,7 @@ app.get("/api/v1/config", (c) =>
 app.route("/api/v1", publicRoutes);
 app.route("/api/admin", adminRoutes);
 app.route("/api/dev", devRoutes);
+app.route("/api/uploads", uploadRoutes);
 
 export default {
 	port: Number(process.env.PORT ?? 3000),

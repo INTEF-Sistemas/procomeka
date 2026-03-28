@@ -8,10 +8,12 @@ import {
 	resources,
 	resourceSubjects,
 	resourceLevels,
+	mediaItems,
 } from "./schema/resources.ts";
 import { collections } from "./schema/collections.ts";
 import { user } from "./schema/auth.ts";
 import { taxonomies } from "./schema/taxonomies.ts";
+import { uploadSessions } from "./schema/uploads.ts";
 
 type DrizzleDB = {
 	select: (...args: unknown[]) => unknown;
@@ -27,6 +29,11 @@ type DrizzleDB = {
  */
 function normalizeSearch(col: any) {
 	return sql`lower(translate(${col}, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN'))`;
+}
+
+function normalizeMediaUrl(url: string, uploadId?: string | null) {
+	if (uploadId) return `/api/v1/uploads/${uploadId}/content`;
+	return url.replace(/^\/api\/admin\/uploads\/([^/]+)\/content$/, "/api/v1/uploads/$1/content");
 }
 
 export async function listResources(
@@ -211,10 +218,13 @@ export async function getResourceBySlug(db: DrizzleDB, slug: string) {
 		.from(resourceLevels)
 		.where(eq(resourceLevels.resourceId, resource.id));
 
+	const resourceMediaItems = await listMediaItemsForResource(db, resource.id);
+
 	return {
 		...resource,
 		subjects: subjects.map((s: { subject: string }) => s.subject),
 		levels: levels.map((l: { level: string }) => l.level),
+		mediaItems: resourceMediaItems,
 	};
 }
 
@@ -324,6 +334,216 @@ export async function updateEditorialStatus(
 		.update(resources)
 		.set(updates)
 		.where(and(eq(resources.id, id), isNull(resources.deletedAt)));
+}
+
+export async function listMediaItemsForResource(db: DrizzleDB, resourceId: string) {
+	const rows = await db
+		.select({
+			id: mediaItems.id,
+			resourceId: mediaItems.resourceId,
+			type: mediaItems.type,
+			mimeType: mediaItems.mimeType,
+			url: mediaItems.url,
+			fileSize: mediaItems.fileSize,
+			filename: mediaItems.filename,
+			isPrimary: mediaItems.isPrimary,
+			uploadId: uploadSessions.id,
+		})
+		.from(mediaItems)
+		.leftJoin(uploadSessions, eq(uploadSessions.mediaItemId, mediaItems.id))
+		.where(eq(mediaItems.resourceId, resourceId))
+		.orderBy(desc(mediaItems.isPrimary), asc(mediaItems.filename));
+
+	return rows.map((row: any) => ({
+		id: row.id,
+		resourceId: row.resourceId,
+		type: row.type,
+		mimeType: row.mimeType,
+		url: normalizeMediaUrl(row.url, row.uploadId),
+		fileSize: row.fileSize,
+		filename: row.filename,
+		isPrimary: row.isPrimary,
+	}));
+}
+
+export async function createMediaItem(
+	db: DrizzleDB,
+	data: {
+		resourceId: string;
+		type: string;
+		mimeType?: string | null;
+		url: string;
+		fileSize?: number | null;
+		filename?: string | null;
+		isPrimary?: number;
+	},
+) {
+	const id = crypto.randomUUID();
+	await db.insert(mediaItems).values({
+		id,
+		resourceId: data.resourceId,
+		type: data.type,
+		mimeType: data.mimeType ?? null,
+		url: data.url,
+		fileSize: data.fileSize ?? null,
+		filename: data.filename ?? null,
+		isPrimary: data.isPrimary ?? 0,
+	});
+	return { id };
+}
+
+export async function createUploadSession(
+	db: DrizzleDB,
+	data: {
+		id: string;
+		resourceId: string;
+		ownerId: string;
+		originalFilename: string;
+		mimeType?: string | null;
+		storageKey: string;
+		checksumAlgorithm?: string | null;
+		finalChecksum?: string | null;
+		declaredSize?: number | null;
+		expiresAt?: Date | null;
+	},
+) {
+	await db.insert(uploadSessions).values({
+		id: data.id,
+		resourceId: data.resourceId,
+		ownerId: data.ownerId,
+		originalFilename: data.originalFilename,
+		mimeType: data.mimeType ?? null,
+		storageKey: data.storageKey,
+		checksumAlgorithm: data.checksumAlgorithm ?? null,
+		finalChecksum: data.finalChecksum ?? null,
+		declaredSize: data.declaredSize ?? null,
+		expiresAt: data.expiresAt ?? null,
+		status: "created",
+		receivedBytes: 0,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	});
+}
+
+export async function getUploadSessionById(db: DrizzleDB, id: string) {
+	const rows = await db
+		.select({
+			id: uploadSessions.id,
+			resourceId: uploadSessions.resourceId,
+			ownerId: uploadSessions.ownerId,
+			mediaItemId: uploadSessions.mediaItemId,
+			status: uploadSessions.status,
+			originalFilename: uploadSessions.originalFilename,
+			mimeType: uploadSessions.mimeType,
+			storageKey: uploadSessions.storageKey,
+			publicUrl: uploadSessions.publicUrl,
+			checksumAlgorithm: uploadSessions.checksumAlgorithm,
+			finalChecksum: uploadSessions.finalChecksum,
+			errorCode: uploadSessions.errorCode,
+			errorMessage: uploadSessions.errorMessage,
+			declaredSize: uploadSessions.declaredSize,
+			receivedBytes: uploadSessions.receivedBytes,
+			expiresAt: uploadSessions.expiresAt,
+			completedAt: uploadSessions.completedAt,
+			cancelledAt: uploadSessions.cancelledAt,
+			createdAt: uploadSessions.createdAt,
+			updatedAt: uploadSessions.updatedAt,
+		})
+		.from(uploadSessions)
+		.where(eq(uploadSessions.id, id))
+		.limit(1);
+
+	return rows[0] ?? null;
+}
+
+export async function listUploadSessionsForResource(db: DrizzleDB, resourceId: string) {
+	return db
+		.select({
+			id: uploadSessions.id,
+			resourceId: uploadSessions.resourceId,
+			ownerId: uploadSessions.ownerId,
+			mediaItemId: uploadSessions.mediaItemId,
+			status: uploadSessions.status,
+			originalFilename: uploadSessions.originalFilename,
+			mimeType: uploadSessions.mimeType,
+			storageKey: uploadSessions.storageKey,
+			publicUrl: uploadSessions.publicUrl,
+			checksumAlgorithm: uploadSessions.checksumAlgorithm,
+			finalChecksum: uploadSessions.finalChecksum,
+			errorCode: uploadSessions.errorCode,
+			errorMessage: uploadSessions.errorMessage,
+			declaredSize: uploadSessions.declaredSize,
+			receivedBytes: uploadSessions.receivedBytes,
+			expiresAt: uploadSessions.expiresAt,
+			completedAt: uploadSessions.completedAt,
+			cancelledAt: uploadSessions.cancelledAt,
+			createdAt: uploadSessions.createdAt,
+			updatedAt: uploadSessions.updatedAt,
+		})
+		.from(uploadSessions)
+		.where(eq(uploadSessions.resourceId, resourceId))
+		.orderBy(desc(uploadSessions.updatedAt), asc(uploadSessions.originalFilename));
+}
+
+export async function updateUploadSessionProgress(
+	db: DrizzleDB,
+	id: string,
+	data: { receivedBytes: number; status?: string },
+) {
+	await db
+		.update(uploadSessions)
+		.set({
+			receivedBytes: data.receivedBytes,
+			status: data.status ?? "uploading",
+			updatedAt: new Date(),
+		})
+		.where(eq(uploadSessions.id, id));
+}
+
+export async function completeUploadSession(
+	db: DrizzleDB,
+	id: string,
+	data: { receivedBytes: number; publicUrl: string; mediaItemId: string; finalChecksum?: string | null },
+) {
+	await db
+		.update(uploadSessions)
+		.set({
+			status: "completed",
+			receivedBytes: data.receivedBytes,
+			publicUrl: data.publicUrl,
+			mediaItemId: data.mediaItemId,
+			finalChecksum: data.finalChecksum ?? null,
+			completedAt: new Date(),
+			updatedAt: new Date(),
+		})
+		.where(eq(uploadSessions.id, id));
+}
+
+export async function failUploadSession(
+	db: DrizzleDB,
+	id: string,
+	data: { code?: string | null; message?: string | null },
+) {
+	await db
+		.update(uploadSessions)
+		.set({
+			status: "failed",
+			errorCode: data.code ?? null,
+			errorMessage: data.message ?? null,
+			updatedAt: new Date(),
+		})
+		.where(eq(uploadSessions.id, id));
+}
+
+export async function cancelUploadSession(db: DrizzleDB, id: string) {
+	await db
+		.update(uploadSessions)
+		.set({
+			status: "cancelled",
+			cancelledAt: new Date(),
+			updatedAt: new Date(),
+		})
+		.where(eq(uploadSessions.id, id));
 }
 
 export async function listUsers(

@@ -8,6 +8,8 @@ import {
 	deleteResource,
 	updateEditorialStatus,
 } from "./repository.ts";
+import { getDb } from "../db.ts";
+import * as repo from "@procomeka/db/repository";
 
 const baseResource = {
 	title: "Recurso test repo",
@@ -63,6 +65,24 @@ describe("Repository — CRUD completo", () => {
 		expect(resource).not.toBeNull();
 		expect(resource!.id).toBe(createdId);
 		expect(resource!.subjects).toEqual([]);
+		expect(resource!.mediaItems).toEqual([]);
+	});
+
+	test("getResourceBySlug → incluye media items asociados", async () => {
+		await repo.createMediaItem(getDb().db, {
+			resourceId: createdId,
+			type: "file",
+			mimeType: "application/pdf",
+			url: "/api/admin/uploads/upload-public/content",
+			fileSize: 1024,
+			filename: "guia.pdf",
+		});
+
+		const resource = await getResourceBySlug(createdSlug);
+		expect(resource).not.toBeNull();
+		expect(resource!.mediaItems).toHaveLength(1);
+		expect(resource!.mediaItems?.[0]?.filename).toBe("guia.pdf");
+		expect(resource!.mediaItems?.[0]?.url).toBe("/api/v1/uploads/upload-public/content");
 	});
 
 	test("getResourceBySlug → null para slug inexistente", async () => {

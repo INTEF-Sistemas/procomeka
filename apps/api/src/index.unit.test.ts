@@ -1,13 +1,21 @@
 import { expect, test, describe, beforeAll } from "bun:test";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { tmpdir } from "node:os";
 import { app } from "./index.ts";
 import { createResource, updateEditorialStatus } from "./resources/repository.ts";
+import { getDb } from "./db.ts";
+import * as repo from "@procomeka/db/repository";
 
 let publishedSlug: string;
 let draftSlug: string;
 let videoSlug: string;
 let englishSlug: string;
+let publishedUploadId: string;
 
 beforeAll(async () => {
+	process.env.UPLOAD_STORAGE_DIR = await mkdtemp(path.join(tmpdir(), "procomeka-public-uploads-"));
+
 	const draft = await createResource({
 		title: "Recurso borrador test",
 		description: "Este recurso está en borrador",
@@ -26,6 +34,37 @@ beforeAll(async () => {
 	});
 	publishedSlug = pub.slug;
 	await updateEditorialStatus(pub.id, "published", "system");
+	publishedUploadId = `public-upload-${crypto.randomUUID()}`;
+	await writeFile(path.join(process.env.UPLOAD_STORAGE_DIR!, publishedUploadId), "pdf de prueba");
+	await repo.ensureUser(getDb().db, {
+		id: "system",
+		email: "system@local.invalid",
+		name: "System",
+		role: "admin",
+	});
+	await repo.createUploadSession(getDb().db, {
+		id: publishedUploadId,
+		resourceId: pub.id,
+		ownerId: "system",
+		originalFilename: "guia-publica.pdf",
+		mimeType: "application/pdf",
+		storageKey: `resource/${pub.id}/${publishedUploadId}/guia-publica.pdf`,
+		declaredSize: 13,
+	});
+	const media = await repo.createMediaItem(getDb().db, {
+		resourceId: pub.id,
+		type: "file",
+		mimeType: "application/pdf",
+		url: `/api/v1/uploads/${publishedUploadId}/content`,
+		fileSize: 13,
+		filename: "guia-publica.pdf",
+	});
+	await repo.completeUploadSession(getDb().db, publishedUploadId, {
+		receivedBytes: 13,
+		publicUrl: `/api/v1/uploads/${publishedUploadId}/content`,
+		mediaItemId: media.id,
+		finalChecksum: "checksum",
+	});
 
 	const video = await createResource({
 		title: "Video publicado test",
@@ -108,6 +147,16 @@ describe("Rutas públicas /api/v1", () => {
 		expect(body.slug).toBe(publishedSlug);
 		expect(body.subjects).toBeDefined();
 		expect(body.levels).toBeDefined();
+		expect(Array.isArray(body.mediaItems)).toBe(true);
+		expect(body.mediaItems[0]?.url).toBe(`/api/v1/uploads/${publishedUploadId}/content`);
+	});
+
+	test("GET /api/v1/uploads/:id/content descarga archivo de recurso publicado", async () => {
+		const res = await app.request(`/api/v1/uploads/${publishedUploadId}/content`);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("content-type")).toContain("application/pdf");
+		expect(res.headers.get("content-disposition")).toContain('filename="guia-publica.pdf"');
+		expect(await res.text()).toBe("pdf de prueba");
 	});
 
 	test("GET /api/v1/resources?q= filtra por búsqueda", async () => {

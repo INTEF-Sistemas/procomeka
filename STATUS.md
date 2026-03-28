@@ -303,3 +303,90 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-27 | `@.agents/skills/documentacion-y-roadmap` | Alineación de README, roadmap y tasks con la implementación real de PostgreSQL dev, backoffice y cobertura | Completado |
+
+## Actualización 2026-03-27 (Issue #30 — uploads resumables)
+
+- **Agente en turno:** `@.agents/skills/backend-api-servicios/SKILL.md` + `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se implementa un primer sistema de subida resumable multiarchivo para adjuntar binarios a recursos desde el backoffice.
+- **Cambios aplicados:**
+  - Integración de uploads resumables en `/api/uploads` con `@tus/server` y persistencia de sesiones en `upload_sessions`.
+  - Nuevos endpoints admin para listar uploads de recurso, listar `media_items`, obtener configuración y descargar/cancelar uploads autenticados.
+  - Panel de uploads en `editar.astro` con drag & drop, cola local, progreso global, cancelación y adjuntos persistidos.
+  - Redirección desde creación de recurso al editor para completar adjuntos sobre un recurso ya existente.
+  - ADR-0011 y nueva épica documental `docs/epics/epic-002-subidas-resumibles/`.
+- **Validación:**
+  - `cd apps/api && bun test ./src/routes/admin.unit.test.ts ./src/routes/uploads.unit.test.ts ./src/uploads/config.unit.test.ts`
+  - `cd apps/frontend && bun run build`
+  - `env -u DATABASE_URL bun run check-coverage`
+- **Resultado:**
+  - `166 pass, 0 fail`
+  - Cobertura de líneas: `91.11%`
+- **Riesgos abiertos:**
+  - La validación estricta de checksum por chunk aún no está cerrada extremo a extremo; la entrega actual persiste estado resumable y checksum final.
+  - El storage sigue siendo disco local/volumen; faltan limpieza programada y política operativa de cuotas/retención.
+  - El preview estático no soporta uploads reales, por diseño.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-27 | `@.agents/skills/backend-api-servicios` + `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Primera entrega de uploads resumables multiarchivo para recursos con API, editor, ADR y épica documental | Completado |
+
+## Actualización 2026-03-27 (Documentación de ruta efectiva de uploads)
+
+- **Agente en turno:** `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se documenta la ruta efectiva de almacenamiento de uploads para evitar confusión entre `local-data/uploads` en raíz y `apps/api/local-data/uploads`.
+- **Cambios aplicados:**
+  - Aclaración en `README.md` de que `UPLOAD_STORAGE_DIR` relativo se resuelve contra el directorio de trabajo del proceso.
+  - Nota operativa en ADR-0011 sobre la caída efectiva del valor por defecto al arrancar la API con `bun run --filter '@procomeka/api' dev`.
+- **Validación:**
+  - Revisión manual de alineación entre `apps/api/src/uploads/config.ts`, `README.md` y ADR-0011.
+- **Resultado:**
+  - La documentación ya explica por qué el valor por defecto `./local-data/uploads` queda en `apps/api/local-data/uploads` con el flujo de desarrollo actual.
+- **Riesgos abiertos:**
+  - El comportamiento sigue dependiendo del `cwd` efectivo del proceso; si se desea una ubicación fija en la raíz del monorepo, hará falta cambiar implementación o fijar `UPLOAD_STORAGE_DIR` absoluto.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-27 | `@.agents/skills/documentacion-y-roadmap` | Documentación del directorio efectivo de uploads en desarrollo local | Completado |
+
+## Actualización 2026-03-27 (Descarga pública de adjuntos en ficha de recurso)
+
+- **Agente en turno:** `@.agents/skills/backend-api-servicios/SKILL.md` + `@.agents/skills/frontend-ux-accesibilidad/SKILL.md`
+- **Acción realizada:** Se corrige la exposición de archivos adjuntos en la vista pública `/recurso`.
+- **Cambios aplicados:**
+  - `getResourceBySlug` ahora incluye `mediaItems` y normaliza URLs antiguas de adjuntos desde `/api/admin/uploads/:id/content` a `/api/v1/uploads/:id/content`.
+  - Nueva ruta pública `GET /api/v1/uploads/:id/content` para descargar binarios de recursos publicados.
+  - La ficha pública `recurso.astro` muestra la sección `Archivos` con enlaces de descarga.
+- **Validación:**
+  - `bun test apps/api/src/resources/repository.unit.test.ts apps/api/src/index.unit.test.ts apps/api/src/routes/uploads.unit.test.ts`
+  - `bun run --filter '@procomeka/frontend' build`
+- **Resultado:**
+  - `37 pass, 0 fail`
+  - Build de frontend correcto
+- **Riesgos abiertos:**
+  - Los adjuntos siguen dependiendo de storage local y de que el fichero físico siga presente en disco.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-27 | `@.agents/skills/backend-api-servicios` + `@.agents/skills/frontend-ux-accesibilidad` | Corrección de adjuntos descargables en ficha pública de recurso | Completado |
+
+## Actualización 2026-03-28 (PR #49 — fixes de revisión)
+
+- **Agente en turno:** `@.agents/skills/backend-api-servicios/SKILL.md` + `@.agents/skills/frontend-ux-accesibilidad/SKILL.md`
+- **Acción realizada:** Se atienden comentarios de revisión de seguridad y validación sobre la PR de uploads resumables.
+- **Cambios aplicados:**
+  - Escape explícito de nombres de archivo, mensajes de error y atributos renderizados vía `innerHTML` en `resource-uploader.ts`.
+  - Nuevos tests unitarios para el render seguro del uploader.
+  - Endurecimiento de `validateUploadCandidate` para rechazar uploads sin extensión o sin tipo MIME permitido.
+  - Ampliación de tests unitarios de configuración de uploads para cubrir esos rechazos.
+- **Validación:**
+  - `bun test apps/frontend/src/lib/resource-uploader.unit.test.ts apps/api/src/uploads/config.unit.test.ts`
+  - `bun run --filter '@procomeka/frontend' build`
+- **Resultado:**
+  - `9 pass, 0 fail`
+  - Build de frontend correcto
+- **Riesgos abiertos:**
+  - La validación sigue basada en metadatos declarados por cliente; si se quiere inspección de contenido real, hará falta añadir sniffing/escaneo en backend.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | `@.agents/skills/backend-api-servicios` + `@.agents/skills/frontend-ux-accesibilidad` | Resolución de comentarios de revisión en PR #49 | Completado |

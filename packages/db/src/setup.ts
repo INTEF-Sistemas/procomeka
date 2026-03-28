@@ -89,6 +89,28 @@ export const SCHEMA_STATEMENTS = [
 		filename TEXT,
 		is_primary INTEGER NOT NULL DEFAULT 0
 	)`,
+	`CREATE TABLE IF NOT EXISTS "upload_sessions" (
+		id TEXT PRIMARY KEY,
+		resource_id TEXT NOT NULL REFERENCES "resources"(id) ON DELETE CASCADE,
+		owner_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+		media_item_id TEXT REFERENCES "media_items"(id) ON DELETE SET NULL,
+		status VARCHAR(50) NOT NULL DEFAULT 'created',
+		original_filename TEXT NOT NULL,
+		mime_type VARCHAR(255),
+		storage_key TEXT NOT NULL,
+		public_url TEXT,
+		checksum_algorithm VARCHAR(32),
+		final_checksum TEXT,
+		error_code VARCHAR(100),
+		error_message TEXT,
+		declared_size BIGINT,
+		received_bytes BIGINT NOT NULL DEFAULT 0,
+		expires_at TIMESTAMP,
+		completed_at TIMESTAMP,
+		cancelled_at TIMESTAMP,
+		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+	)`,
 	`CREATE TABLE IF NOT EXISTS "resource_subjects" (
 		resource_id TEXT NOT NULL REFERENCES "resources"(id) ON DELETE CASCADE,
 		subject VARCHAR(255) NOT NULL
@@ -126,6 +148,9 @@ export const SCHEMA_STATEMENTS = [
 	`CREATE INDEX IF NOT EXISTS idx_resources_slug ON resources(slug)`,
 	`CREATE INDEX IF NOT EXISTS idx_resources_status ON resources(editorial_status)`,
 	`CREATE INDEX IF NOT EXISTS idx_resources_type ON resources(resource_type)`,
+	`CREATE INDEX IF NOT EXISTS idx_upload_sessions_resource_id ON upload_sessions(resource_id)`,
+	`CREATE INDEX IF NOT EXISTS idx_upload_sessions_owner_id ON upload_sessions(owner_id)`,
+	`CREATE INDEX IF NOT EXISTS idx_upload_sessions_status ON upload_sessions(status)`,
 	`CREATE INDEX IF NOT EXISTS idx_taxonomies_type ON taxonomies(type)`,
 	`DO $$ BEGIN
 		ALTER TABLE "resources" ADD COLUMN created_by TEXT REFERENCES "user"(id);

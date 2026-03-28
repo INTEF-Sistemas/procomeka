@@ -46,6 +46,41 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 		<div id="error-message" class="error" role="alert" aria-live="polite" style="display:none;"></div>
 		<div id="success-message" class="success" role="status" aria-live="polite" style="display:none;"></div>
 
+		<section id="upload-panel" class="upload-panel" style="display:none;" aria-labelledby="upload-title">
+			<div class="upload-header">
+				<div>
+					<p class="eyebrow">Archivos</p>
+					<h2 id="upload-title">Adjuntar archivos al recurso</h2>
+				</div>
+				<label class="upload-picker">
+					<span>Seleccionar archivos</span>
+					<input data-upload-input type="file" multiple />
+				</label>
+			</div>
+			<div data-upload-dropzone class="upload-dropzone" tabindex="0">
+				Arrastra archivos aquí o usa el selector. Se permiten lotes de varios archivos y la subida continuará si la conexión se corta.
+			</div>
+			<div data-upload-feedback class="upload-feedback" aria-live="polite"></div>
+			<div class="upload-progress-summary">
+				<progress data-global-progress max="100" value="0"></progress>
+				<span data-global-progress-label>Sin subidas activas</span>
+			</div>
+			<div class="upload-columns">
+				<section>
+					<h3>Cola local</h3>
+					<ul data-upload-queue class="upload-list"><li>No hay archivos en cola.</li></ul>
+				</section>
+				<section>
+					<h3>Uploads recientes</h3>
+					<ul data-persisted-uploads class="upload-list"><li>No hay uploads recientes.</li></ul>
+				</section>
+			</div>
+			<section>
+				<h3>Archivos adjuntos</h3>
+				<ul data-media-list class="upload-list"><li>No hay archivos adjuntos todavía.</li></ul>
+			</section>
+		</section>
+
 		<form id="resource-form" style="display:none;" novalidate>
 			<div class="field">
 				<label for="title">Título *</label>
@@ -122,6 +157,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 <script>
 	import { getApiClient } from "../../../lib/get-api-client.ts";
 	import { url } from "../../../lib/paths.ts";
+	import { initResourceUploader } from "../../../lib/resource-uploader.ts";
 
 	const form = document.getElementById("resource-form") as HTMLFormElement;
 	const authCheck = document.getElementById("auth-check") as HTMLDivElement;
@@ -135,6 +171,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 	const workflowSuccess = document.getElementById("workflow-success") as HTMLDivElement;
 	const statusAnnouncement = document.getElementById("status-announcement") as HTMLParagraphElement;
 	const archivedBadge = document.getElementById("archived-badge") as HTMLDivElement;
+	const uploadPanel = document.getElementById("upload-panel") as HTMLElement;
 
 	// Configurar enlaces con base path
 	const loginLink = document.getElementById("login-link") as HTMLAnchorElement;
@@ -343,7 +380,13 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
 			loadingDiv.style.display = "none";
 			workflowSection.style.display = "block";
+			uploadPanel.style.display = "block";
 			form.style.display = "block";
+			await initResourceUploader({
+				resourceId: resourceId!,
+				root: uploadPanel,
+				api,
+			});
 		} catch {
 			loadingDiv.style.display = "none";
 			notFound.style.display = "block";
@@ -390,8 +433,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 </script>
 
 <style>
-	.form-container { max-width: 600px; margin: 0 auto; }
+	.form-container { max-width: 880px; margin: 0 auto; }
 	h1 { margin-bottom: 1.5rem; }
+	h2, h3 { margin: 0; }
+	.eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; }
 
 	/* --- Resource meta --- */
 	.resource-meta {
@@ -491,6 +536,109 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 	}
 
 	/* --- Form --- */
+	.upload-panel {
+		border: 1px solid #dbe4ee;
+		border-radius: 14px;
+		padding: 1rem;
+		margin-bottom: 1.5rem;
+		background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+	}
+	.upload-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 1rem;
+	}
+	.upload-picker {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.75rem 1rem;
+		border-radius: 999px;
+		background: #0f766e;
+		color: white;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.upload-picker input {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+	}
+	.upload-dropzone {
+		border: 2px dashed #94a3b8;
+		border-radius: 12px;
+		padding: 1rem;
+		background: white;
+		color: #475569;
+		margin-bottom: 0.75rem;
+	}
+	.upload-dropzone.is-dragover {
+		border-color: #0f766e;
+		background: #ecfeff;
+	}
+	.upload-feedback {
+		min-height: 1.25rem;
+		margin-bottom: 0.75rem;
+		font-weight: 600;
+	}
+	.upload-feedback.success { color: #065f46; }
+	.upload-feedback.error { color: #b91c1c; }
+	.upload-progress-summary {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.75rem;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+	.upload-progress-summary progress { width: 100%; }
+	.upload-columns {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+		margin-bottom: 1rem;
+	}
+	.upload-list {
+		list-style: none;
+		padding: 0;
+		margin: 0.75rem 0 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.65rem;
+	}
+	.upload-list li {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto auto;
+		gap: 0.5rem;
+		align-items: center;
+		padding: 0.75rem;
+		background: white;
+		border: 1px solid #e2e8f0;
+		border-radius: 10px;
+	}
+	.upload-list progress { width: 100%; }
+	.upload-list button {
+		width: auto;
+		margin-top: 0;
+		padding: 0.55rem 0.85rem;
+		background: #fff;
+		color: #334155;
+		border: 1px solid #cbd5e1;
+	}
+	.upload-status {
+		text-transform: uppercase;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+	}
+	.upload-status-uploading { color: #0f766e; }
+	.upload-status-completed { color: #166534; }
+	.upload-status-failed { color: #b91c1c; }
+	.upload-status-cancelled { color: #64748b; }
+	.upload-error { color: #b91c1c; }
 	.field { margin-bottom: 1rem; }
 	label { display: block; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.9rem; }
 	input, textarea, select {
@@ -508,4 +656,15 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 	.success { background: #d1fae5; color: #065f46; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; }
 	.field-error { display: block; color: #dc2626; font-size: 0.8rem; margin-top: 0.2rem; min-height: 1rem; }
 	#loading { color: #9ca3af; }
+	@media (max-width: 720px) {
+		.upload-header,
+		.upload-columns,
+		.row {
+			grid-template-columns: 1fr;
+			display: grid;
+		}
+		.upload-list li {
+			grid-template-columns: 1fr;
+		}
+	}
 </style>

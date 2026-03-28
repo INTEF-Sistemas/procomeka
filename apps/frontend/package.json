@@ -13,6 +13,9 @@
 	"dependencies": {
 		"@electric-sql/pglite": "^0.2.17",
 		"@procomeka/db": "workspace:*",
+		"@uppy/core": "^5.2.0",
+		"@uppy/dashboard": "^5.1.1",
+		"@uppy/tus": "^5.1.1",
 		"astro": "^5.7.0",
 		"drizzle-orm": "^0.44.0",
 		"typescript": "^6.0.2"
