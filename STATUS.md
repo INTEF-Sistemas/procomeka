@@ -53,7 +53,7 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 
 - **Agente en turno:** `@.agents/skills/evaluacion-tecnologica/SKILL.md`
 - **Acción realizada:** Se completa propuesta ADR de framework HTTP para API backend en `docs/negocio/decisiones/0003-framework-http-api.md`.
-- **Estado del entregable:** Propuesto (pendiente de aceptación por usuario/PM).
+- **Estado del entregable:** Aceptado.
 - **Riesgos abiertos:**
   - Validar benchmark en caso real de dominio antes de congelar plantilla de servicio.
   - Confirmar si el tablero global renumera ADRs bloqueantes (el encargo actual usa ADR-0003 para HTTP).
@@ -475,3 +475,20 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Accion / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-28 | Equipo multiagente | Refactorizacion integral: arquitectura, entidades, API, frontend, skills, testing, documentacion (PR #52) | Completado |
+
+## Actualización 2026-03-28 (Evaluación framework UI para islands)
+
+- **Agente en turno:** `@.agents/skills/evaluacion-tecnologica/SKILL.md`
+- **Issue:** #50 — Evaluar framework UI para islands interactivas en Astro
+- **Acción realizada:** Se redacta ADR-0013 en `docs/negocio/decisiones/0013-framework-ui-islands.md`.
+- **Propuesta:** React como framework UI para islands, con React Aria (Adobe) como librería de componentes accesibles, React Hook Form para formularios y Tanstack Table para tablas.
+- **Estado del entregable:** Aceptado.
+- **Justificación principal:** Mejor ecosistema WCAG AA (React Aria), formularios y tablas resueltos, testing maduro, TypeScript completo. ADR-0004 ya contemplaba React para islands.
+- **Plan de migración:** 7 fases incrementales, de menor a mayor complejidad, empezando por CRUD de categorías y terminando con el formulario de edición de recursos.
+- **Impacto en bundle:** ~80-90 KB base (gzip) compartido entre todas las islands; páginas sin islands siguen siendo 0 KB JS.
+- **Riesgos abiertos:** Bundle mayor que Svelte/Solid; requiere disciplina para evitar deriva SPA.
+- **Traspaso de turno sugerido:** `@.agents/skills/direccion-de-plataforma/SKILL.md` para aceptación/rechazo de ADR.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | `@.agents/skills/evaluacion-tecnologica` | ADR-0013 Framework UI para islands interactivas — Aceptado (Issue #50) | Aceptado |
