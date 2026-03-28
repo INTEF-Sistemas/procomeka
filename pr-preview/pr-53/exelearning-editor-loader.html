@@ -25,16 +25,15 @@
       // Inject base tag
       html = html.replace('<head>', '<head>\n<base href="' + editorBase + '/">');
 
-      // Inject embedding config
-      var config = '<script>' +
-        'window.__EXE_EMBEDDING_CONFIG__ = {' +
-          'basePath: "' + editorBase + '",' +
-          'initialProjectUrl: ' + JSON.stringify(elpxUrl) + ',' +
-          'parentOrigin: "' + window.location.origin + '",' +
-          'trustedOrigins: ["' + window.location.origin + '"],' +
-          'hideUI: { fileMenu: true, saveButton: true, userMenu: true }' +
-        '};' +
-      '<\/script>';
+      // Inject embedding config (only set initialProjectUrl if elpxUrl is provided)
+      var configObj = 'basePath: "' + editorBase + '",' +
+        'parentOrigin: "' + window.location.origin + '",' +
+        'trustedOrigins: ["' + window.location.origin + '"],' +
+        'hideUI: { fileMenu: true, saveButton: true, userMenu: true }';
+      if (elpxUrl) {
+        configObj += ', initialProjectUrl: ' + JSON.stringify(elpxUrl);
+      }
+      var config = '<script>window.__EXE_EMBEDDING_CONFIG__ = {' + configObj + '};<\/script>';
       html = html.replace('</head>', config + '\n</head>');
 
       // Inject bridge script
@@ -60,11 +59,16 @@
   });
 
   // Forward postMessages from parent to editor iframe
+  // OPEN_FILE messages contain ArrayBuffer that must be transferred
   window.addEventListener('message', function(event) {
     if (event.source === window.parent) {
       var frame = document.getElementById('editor-frame');
       if (frame.contentWindow) {
-        frame.contentWindow.postMessage(event.data, '*');
+        var transferables = [];
+        if (event.data && event.data.data && event.data.data.bytes instanceof ArrayBuffer) {
+          transferables.push(event.data.data.bytes);
+        }
+        frame.contentWindow.postMessage(event.data, '*', transferables);
       }
     }
   });
