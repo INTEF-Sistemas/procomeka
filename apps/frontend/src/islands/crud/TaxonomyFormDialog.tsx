@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import { ModalFrame } from "../shared/ModalFrame.tsx";
 import { TAXONOMY_TYPE_OPTIONS, type TaxonomyType } from "./taxonomy-options.ts";
 
 interface TaxonomyFormValues {
@@ -29,7 +30,7 @@ export function TaxonomyFormDialog({
 	if (!open) return null;
 
 	return (
-		<dialog open className="admin-edit-dialog" aria-labelledby="edit-taxonomy-title">
+		<ModalFrame open={open} className="admin-edit-dialog" titleId="edit-taxonomy-title" onClose={onCancel}>
 			<h2 id="edit-taxonomy-title">Editar categoria</h2>
 			<form onSubmit={onSubmit}>
 				<label>
@@ -81,6 +82,6 @@ export function TaxonomyFormDialog({
 					</button>
 				</div>
 			</form>
-		</dialog>
+		</ModalFrame>
 	);
 }

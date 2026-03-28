@@ -529,3 +529,37 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-28 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Bootstrap de React islands (ADR-0013), piloto en `admin/categorias`, documentación y validación estándar completadas | Completado |
+
+## Actualización 2026-03-28 (ADR-0013: migración `admin/colecciones`)
+
+- **Agente en turno:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se sustituye el script imperativo de `apps/frontend/src/pages/admin/colecciones/index.astro` por una island React dedicada.
+- **Cambios aplicados:**
+  - Se crea `apps/frontend/src/islands/crud/CollectionsCrudIsland.tsx`.
+  - La ruta `admin/colecciones` pasa a shell Astro + island React `client:load`.
+  - El flujo de alta, edición, borrado, búsqueda y paginación queda gestionado con estado React y componentes compartidos.
+  - Se añade un test TypeScript del shell inicial de la nueva island.
+- **Validación prevista:**
+  - `cd apps/frontend && bun test`
+  - `cd apps/frontend && bun run build`
+  - `cd apps/frontend && PREVIEW_STATIC=true bun run build:preview`
+  - `bun run test`
+- **Riesgos abiertos:**
+  - Medir bundle cuando se aborde `admin/recursos/index`, donde el peso hidratado será más representativo.
+  - Extraer una base más genérica de CRUD si `admin/usuarios` y `admin/colecciones` convergen suficientemente en estructura.
+- **Traspaso recomendado:** continuar con validación completa y, si queda en verde, seguir con `admin/usuarios`.
+
+## Actualización 2026-03-28 (ADR-0013: `admin/colecciones` validado)
+
+- **Validación ejecutada:**
+  - `cd apps/frontend && bun test`
+  - `cd apps/frontend && bun run build`
+  - `cd apps/frontend && PREVIEW_STATIC=true bun run build:preview`
+  - `bun run test`
+- **Resultado:** validación estándar en verde. La suite global del repositorio termina con 204 tests passing y 91.94% de cobertura de líneas.
+- **Impacto de bundle observado:** `CollectionsCrudIsland` se empaqueta como chunk dedicado de `7.21 kB` (`2.37 kB gzip`), dentro del presupuesto previsto para esta fase.
+- **Nota operativa:** los warnings de build observados siguen siendo los ya existentes de PGlite y dependencias de preview, sin cambios de severidad atribuibles a la migración de colecciones.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Migración de `admin/colecciones` a React island, test TypeScript y validación estándar completada | Completado |

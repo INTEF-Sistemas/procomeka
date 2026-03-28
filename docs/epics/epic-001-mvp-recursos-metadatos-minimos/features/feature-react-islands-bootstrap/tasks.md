@@ -23,3 +23,9 @@ En desarrollo
 
 ## Cierre de validación — 2026-03-28
 - [x] Ejecutar build y suite de validación completa.
+
+## Migración de colecciones — 2026-03-28
+- [x] Sustituir el script inline de `admin/colecciones` por una island React.
+- [x] Reutilizar la base compartida (`CrudTable`, `ConfirmDialog`, feedback accesible) en la pantalla de colecciones.
+- [x] Cubrir alta, edición, borrado, búsqueda y paginación de colecciones con estado React.
+- [x] Ejecutar validación completa tras la migración de `admin/colecciones`.

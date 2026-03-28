@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { ModalFrame } from "./ModalFrame.tsx";
 
 interface ConfirmDialogProps {
 	open: boolean;
@@ -24,7 +24,7 @@ export function ConfirmDialog({
 	if (!open) return null;
 
 	return (
-		<dialog open className="admin-confirm-dialog" aria-labelledby="confirm-dialog-title">
+		<ModalFrame open={open} className="admin-confirm-dialog" titleId="confirm-dialog-title" onClose={onCancel}>
 			<form
 				method="dialog"
 				onSubmit={(event) => {
@@ -45,6 +45,6 @@ export function ConfirmDialog({
 					</button>
 				</div>
 			</form>
-		</dialog>
+		</ModalFrame>
 	);
 }

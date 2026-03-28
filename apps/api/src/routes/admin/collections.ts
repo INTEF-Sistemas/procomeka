@@ -9,7 +9,15 @@ const collectionRoutes = buildCrudRoutes({
 	list: (db, opts) => repo.listCollections(db, opts as Parameters<typeof repo.listCollections>[1]),
 	getById: repo.getCollectionById,
 	create: (db, data) => repo.createCollection(db, data as Parameters<typeof repo.createCollection>[1]),
-	update: (db, id, data) => repo.updateCollection(db, id, data as Parameters<typeof repo.updateCollection>[2]),
+	update: (db, id, data) => {
+		const payload = data as Record<string, unknown>;
+		return repo.updateCollection(db, id, {
+			title: typeof payload.title === "string" ? payload.title : undefined,
+			description: typeof payload.description === "string" ? payload.description : undefined,
+			editorialStatus: typeof payload.editorialStatus === "string" ? payload.editorialStatus : undefined,
+			isOrdered: typeof payload.isOrdered === "boolean" ? (payload.isOrdered ? 1 : 0) : undefined,
+		});
+	},
 	remove: repo.deleteCollection,
 	validateCreate: validateCollection,
 	validateUpdate: validateCollection,

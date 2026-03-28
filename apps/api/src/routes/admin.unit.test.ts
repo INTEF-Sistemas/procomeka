@@ -471,9 +471,20 @@ describe("Rutas admin — colecciones", () => {
 		const patchRes = await app.request(`/api/admin/collections/${id}`, {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ title: "Colección actualizada", description: "Desc actualizada" }),
+			body: JSON.stringify({
+				title: "Colección actualizada",
+				description: "Desc actualizada",
+				editorialStatus: "published",
+				isOrdered: true,
+			}),
 		});
 		expect(patchRes.status).toBe(200);
+
+		const updatedRes = await app.request(`/api/admin/collections/${id}`);
+		expect(updatedRes.status).toBe(200);
+		const updated = await updatedRes.json();
+		expect(updated.editorialStatus).toBe("published");
+		expect(updated.isOrdered).toBe(1);
 
 		const deleteRes = await app.request(`/api/admin/collections/${id}`, { method: "DELETE" });
 		expect(deleteRes.status).toBe(200);
