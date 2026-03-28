@@ -29,3 +29,9 @@ En desarrollo
 - [x] Reutilizar la base compartida (`CrudTable`, `ConfirmDialog`, feedback accesible) en la pantalla de colecciones.
 - [x] Cubrir alta, edición, borrado, búsqueda y paginación de colecciones con estado React.
 - [x] Ejecutar validación completa tras la migración de `admin/colecciones`.
+
+## Migración de usuarios — 2026-03-28
+- [x] Sustituir el script inline de `admin/usuarios` por una island React.
+- [x] Cubrir filtros, paginación, cambio de rol y activación/desactivación con estado React.
+- [x] Añadir test TypeScript del shell inicial de la nueva island.
+- [x] Ejecutar validación completa tras la migración de `admin/usuarios`.

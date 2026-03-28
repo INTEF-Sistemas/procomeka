@@ -563,3 +563,24 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-28 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Migración de `admin/colecciones` a React island, test TypeScript y validación estándar completada | Completado |
+
+## Actualización 2026-03-28 (ADR-0013: migración `admin/usuarios`)
+
+- **Agente en turno:** `@.agents/skills/frontend-ux-accesibilidad/SKILL.md` + `@.agents/skills/documentacion-y-roadmap/SKILL.md`
+- **Acción realizada:** Se sustituye el script imperativo de `apps/frontend/src/pages/admin/usuarios/index.astro` por una island React dedicada.
+- **Cambios aplicados:**
+  - Se crea `apps/frontend/src/islands/crud/UsersCrudIsland.tsx`.
+  - La ruta `admin/usuarios` pasa a shell Astro + island React `client:load`.
+  - El flujo de filtros, paginación, cambio de rol y activación/desactivación queda gestionado con estado React y feedback accesible.
+  - Se añade un test TypeScript del shell inicial de la nueva island.
+- **Validación ejecutada:**
+  - `cd apps/frontend && bun test`
+  - `cd apps/frontend && bun run build`
+  - `bun run test`
+- **Resultado:** validación estándar en verde. La suite global del repositorio termina con 204 tests passing y 91.94% de cobertura de líneas.
+- **Impacto de bundle observado:** `UsersCrudIsland` se empaqueta como chunk dedicado de `4.23 kB` (`1.70 kB gzip`), dentro del presupuesto de la fase.
+- **Traspaso recomendado:** continuar con `admin/recursos/index`, donde el peso y la complejidad ya justifican medir bundle y separar claramente acciones de tabla frente a navegación.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | `@.agents/skills/frontend-ux-accesibilidad` + `@.agents/skills/documentacion-y-roadmap` | Migración de `admin/usuarios` a React island, test TypeScript y validación estándar completada | Completado |

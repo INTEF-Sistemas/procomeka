@@ -40,3 +40,17 @@
 ## Observaciones adicionales — `admin/colecciones`
 - La island `CollectionsCrudIsland` se genera como chunk dedicado de `7.21 kB` (`2.37 kB gzip`) sobre el runtime compartido de React ya introducido en la iteración anterior.
 - Se mantienen los warnings previos de build relacionados con PGlite/browser externals y `eval` en dependencias de preview; no son nuevos de esta migración.
+
+## Validación prevista — `admin/usuarios` — 2026-03-28
+- `cd apps/frontend && bun test`
+- `cd apps/frontend && bun run build`
+- `bun run test`
+
+## Resultado de validación — `admin/usuarios` — 2026-03-28
+- `cd apps/frontend && bun test` ✅
+- `cd apps/frontend && bun run build` ✅
+- `bun run test` ✅
+
+## Observaciones adicionales — `admin/usuarios`
+- La island `UsersCrudIsland` se genera como chunk dedicado de `4.23 kB` (`1.70 kB gzip`) sobre el runtime compartido.
+- La validación global del repositorio se mantiene en `204 pass`, `0 fail` y `91.94%` de cobertura de líneas.
