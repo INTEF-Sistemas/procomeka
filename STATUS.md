@@ -368,3 +368,25 @@ Antes de escribir código de negocio, se deben resolver las siguientes decisione
 | Fecha | Agente | Acción / Entregable | Estado |
 |-------|--------|---------------------|--------|
 | 2026-03-27 | `@.agents/skills/backend-api-servicios` + `@.agents/skills/frontend-ux-accesibilidad` | Corrección de adjuntos descargables en ficha pública de recurso | Completado |
+
+## Actualización 2026-03-28 (PR #49 — fixes de revisión)
+
+- **Agente en turno:** `@.agents/skills/backend-api-servicios/SKILL.md` + `@.agents/skills/frontend-ux-accesibilidad/SKILL.md`
+- **Acción realizada:** Se atienden comentarios de revisión de seguridad y validación sobre la PR de uploads resumables.
+- **Cambios aplicados:**
+  - Escape explícito de nombres de archivo, mensajes de error y atributos renderizados vía `innerHTML` en `resource-uploader.ts`.
+  - Nuevos tests unitarios para el render seguro del uploader.
+  - Endurecimiento de `validateUploadCandidate` para rechazar uploads sin extensión o sin tipo MIME permitido.
+  - Ampliación de tests unitarios de configuración de uploads para cubrir esos rechazos.
+- **Validación:**
+  - `bun test apps/frontend/src/lib/resource-uploader.unit.test.ts apps/api/src/uploads/config.unit.test.ts`
+  - `bun run --filter '@procomeka/frontend' build`
+- **Resultado:**
+  - `9 pass, 0 fail`
+  - Build de frontend correcto
+- **Riesgos abiertos:**
+  - La validación sigue basada en metadatos declarados por cliente; si se quiere inspección de contenido real, hará falta añadir sniffing/escaneo en backend.
+
+| Fecha | Agente | Acción / Entregable | Estado |
+|-------|--------|---------------------|--------|
+| 2026-03-28 | `@.agents/skills/backend-api-servicios` + `@.agents/skills/frontend-ux-accesibilidad` | Resolución de comentarios de revisión en PR #49 | Completado |

@@ -2,7 +2,7 @@ import Uppy from "@uppy/core";
 import Tus from "@uppy/tus";
 import type { ApiClient, MediaItemRecord, UploadSessionRecord } from "./api-client.ts";
 
-function formatBytes(bytes?: number | null) {
+export function formatBytes(bytes?: number | null) {
 	if (!bytes || bytes <= 0) return "0 B";
 	const units = ["B", "KB", "MB", "GB", "TB"];
 	let value = bytes;
@@ -14,9 +14,55 @@ function formatBytes(bytes?: number | null) {
 	return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
-function extractUploadId(uploadUrl?: string | null) {
+export function escapeHtml(value: string) {
+	return value
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;")
+		.replaceAll("'", "&#39;");
+}
+
+export function extractUploadId(uploadUrl?: string | null) {
 	if (!uploadUrl) return null;
 	return uploadUrl.split("/").pop() ?? null;
+}
+
+export function renderPersistedUploadItem(upload: UploadSessionRecord) {
+	const cancellable = !["completed", "cancelled"].includes(upload.status);
+	return `<li>
+		<strong>${escapeHtml(upload.originalFilename)}</strong>
+		<span>${formatBytes(upload.receivedBytes)} / ${formatBytes(upload.declaredSize ?? null)}</span>
+		<span class="upload-status upload-status-${escapeHtml(upload.status)}">${escapeHtml(upload.status)}</span>
+		${upload.errorMessage ? `<span class="upload-error">${escapeHtml(upload.errorMessage)}</span>` : ""}
+		${cancellable ? `<button type="button" data-cancel-upload="${escapeHtml(upload.id)}">Cancelar</button>` : ""}
+	</li>`;
+}
+
+export function renderMediaItem(item: MediaItemRecord) {
+	return `<li><a href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.filename ?? item.id)}</a> <span>${formatBytes(item.fileSize ?? null)}</span></li>`;
+}
+
+export function renderQueueItem(file: {
+	id: string;
+	name?: string | null;
+	size?: number | null;
+	error?: string | null;
+	progress?: { percentage?: number | null };
+	response?: { uploadURL?: string | null } | null;
+}) {
+	const progress = Math.round(file.progress?.percentage ?? 0);
+	const uploadId = extractUploadId(file.response?.uploadURL ?? undefined);
+	return `<li>
+		<strong>${escapeHtml(file.name ?? "Archivo")}</strong>
+		<span>${formatBytes(file.size ?? null)}</span>
+		<progress max="100" value="${progress}"></progress>
+		<span>${progress}%</span>
+		${file.error ? `<span class="upload-error">${escapeHtml(file.error)}</span>` : ""}
+		<button type="button" data-remove-local="${escapeHtml(file.id)}" data-upload-id="${escapeHtml(uploadId ?? "")}">
+			${progress >= 100 ? "Quitar" : "Cancelar"}
+		</button>
+	</li>`;
 }
 
 export async function initResourceUploader(args: {
@@ -64,22 +110,13 @@ export async function initResourceUploader(args: {
 
 		persistedList.innerHTML = uploads.length
 			? uploads
-				.map((upload) => {
-					const cancellable = !["completed", "cancelled"].includes(upload.status);
-					return `<li>
-						<strong>${upload.originalFilename}</strong>
-						<span>${formatBytes(upload.receivedBytes)} / ${formatBytes(upload.declaredSize ?? null)}</span>
-						<span class="upload-status upload-status-${upload.status}">${upload.status}</span>
-						${upload.errorMessage ? `<span class="upload-error">${upload.errorMessage}</span>` : ""}
-						${cancellable ? `<button type="button" data-cancel-upload="${upload.id}">Cancelar</button>` : ""}
-					</li>`;
-				})
+				.map((upload) => renderPersistedUploadItem(upload))
 				.join("")
 			: "<li>No hay uploads recientes.</li>";
 
 		mediaList.innerHTML = mediaItems.length
 			? mediaItems
-				.map((item) => `<li><a href="${item.url}" target="_blank" rel="noreferrer">${item.filename ?? item.id}</a> <span>${formatBytes(item.fileSize ?? null)}</span></li>`)
+				.map((item) => renderMediaItem(item))
 				.join("")
 			: "<li>No hay archivos adjuntos todavía.</li>";
 	}
@@ -88,20 +125,7 @@ export async function initResourceUploader(args: {
 		const files = uppy.getFiles();
 		queue.innerHTML = files.length
 			? files
-				.map((file) => {
-					const progress = Math.round(file.progress?.percentage ?? 0);
-					const uploadId = extractUploadId(file.response?.uploadURL as string | undefined);
-					return `<li>
-						<strong>${file.name}</strong>
-						<span>${formatBytes(file.size ?? null)}</span>
-						<progress max="100" value="${progress}"></progress>
-						<span>${progress}%</span>
-						${file.error ? `<span class="upload-error">${file.error}</span>` : ""}
-						<button type="button" data-remove-local="${file.id}" data-upload-id="${uploadId ?? ""}">
-							${progress >= 100 ? "Quitar" : "Cancelar"}
-						</button>
-					</li>`;
-				})
+				.map((file) => renderQueueItem(file))
 				.join("")
 			: "<li>No hay archivos en cola.</li>";
 

@@ -112,11 +112,17 @@ export function validateUploadCandidate(
 	}
 
 	const extension = extractFileExtension(data.filename);
-	if (extension && !config.allowedExtensions.includes(extension)) {
+	if (!extension) {
+		return { ok: false, error: "El archivo debe incluir una extensión permitida" };
+	}
+	if (!config.allowedExtensions.includes(extension)) {
 		return { ok: false, error: `Extensión no permitida: ${extension}` };
 	}
 
-	if (data.mimeType && !config.allowedMimeTypes.includes(data.mimeType)) {
+	if (!data.mimeType?.trim()) {
+		return { ok: false, error: "El tipo MIME es obligatorio" };
+	}
+	if (!config.allowedMimeTypes.includes(data.mimeType)) {
 		return { ok: false, error: `Tipo MIME no permitido: ${data.mimeType}` };
 	}
 

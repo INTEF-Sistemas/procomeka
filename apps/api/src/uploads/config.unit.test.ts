@@ -27,6 +27,9 @@ describe("upload config helpers", () => {
 		const config = getUploadConfig({});
 		expect(validateUploadCandidate(config, { filename: "video.mp4", mimeType: "video/mp4", fileSize: 1024 }).ok).toBe(true);
 		expect(validateUploadCandidate(config, { filename: "malware.exe", mimeType: "application/octet-stream", fileSize: 1024 }).ok).toBe(false);
+		expect(validateUploadCandidate(config, { filename: "sin-extension", mimeType: "video/mp4", fileSize: 1024 }).ok).toBe(false);
+		expect(validateUploadCandidate(config, { filename: "video.mp4", mimeType: "", fileSize: 1024 }).ok).toBe(false);
+		expect(validateUploadCandidate(config, { filename: "video.mp4", fileSize: 1024 }).ok).toBe(false);
 		expect(validateUploadCandidate(config, { filename: "dataset.csv", mimeType: "text/csv", fileSize: config.maxFileSizeBytes + 1 }).ok).toBe(false);
 	});
 
