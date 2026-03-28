@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>eXeLearning Editor</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+  iframe { width: 100%; height: 100%; border: none; }
+</style>
+</head>
+<body>
+<iframe id="editor-frame" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-downloads" allow="clipboard-write"></iframe>
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var elpxUrl = params.get('elpxUrl') || '';
+  var resourceId = params.get('resourceId') || '';
+  var base = window.location.pathname.replace(/\/[^/]*$/, '/');
+  var editorBase = base + 'exelearning-editor';
+
+  // Load editor index.html, inject config, and display in iframe
+  fetch(editorBase + '/index.html')
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+      // Inject base tag
+      html = html.replace('<head>', '<head>\n<base href="' + editorBase + '/">');
+
+      // Inject embedding config
+      var config = '<script>' +
+        'window.__EXE_EMBEDDING_CONFIG__ = {' +
+          'basePath: "' + editorBase + '",' +
+          'initialProjectUrl: ' + JSON.stringify(elpxUrl) + ',' +
+          'parentOrigin: "' + window.location.origin + '",' +
+          'trustedOrigins: ["' + window.location.origin + '"],' +
+          'hideUI: { fileMenu: true, saveButton: true, userMenu: true }' +
+        '};' +
+      '<\/script>';
+      html = html.replace('</head>', config + '\n</head>');
+
+      // Inject bridge script
+      var bridge = '<script>' + document.getElementById('bridge-src').textContent + '<\/script>';
+      html = html.replace('</body>', bridge + '\n</body>');
+
+      // Write to iframe
+      var frame = document.getElementById('editor-frame');
+      var doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open();
+      doc.write(html);
+      doc.close();
+    });
+
+  // Forward postMessages from editor iframe to our parent
+  window.addEventListener('message', function(event) {
+    if (event.source === document.getElementById('editor-frame').contentWindow) {
+      // Forward to parent (the editar.astro page)
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(event.data, '*');
+      }
+    }
+  });
+
+  // Forward postMessages from parent to editor iframe
+  window.addEventListener('message', function(event) {
+    if (event.source === window.parent) {
+      var frame = document.getElementById('editor-frame');
+      if (frame.contentWindow) {
+        frame.contentWindow.postMessage(event.data, '*');
+      }
+    }
+  });
+})();
+</script>
+
+<!-- Bridge script source (injected into editor) -->
+<script type="text/template" id="bridge-src">
+(function() {
+  'use strict';
+  var targetOrigin = window.__EXE_EMBEDDING_CONFIG__?.parentOrigin || '*';
+  var documentLoadedNotified = false;
+
+  function post(msg) {
+    if (window.parent && window.parent !== window) window.parent.postMessage(msg, targetOrigin);
+  }
+
+  async function getApp(timeout) {
+    timeout = timeout || 15000;
+    var start = Date.now();
+    while (Date.now() - start < timeout) {
+      if (window.eXeLearning?.app) return window.eXeLearning.app;
+      await new Promise(function(r) { setTimeout(r, 100); });
+    }
+    throw new Error('App not ready');
+  }
+
+  async function exportToBytes() {
+    var app = await getApp();
+    var project = app.project;
+    var blob, filename = 'project.elpx';
+    if (window.SharedExporters?.createExporter && project?._yjsBridge?.documentManager) {
+      var yb = project._yjsBridge;
+      var exporter = window.SharedExporters.createExporter('elpx', yb.documentManager, yb.assetCache || null, yb.resourceFetcher || null, yb.assetManager || null);
+      var result = await exporter.export({});
+      if (!result?.success || !result?.data) throw new Error(result?.error || 'Export failed');
+      blob = new Blob([result.data], { type: 'application/zip' });
+      filename = result.filename || filename;
+    } else if (project && typeof project.exportToElpxBlob === 'function') {
+      blob = await project.exportToElpxBlob();
+      filename = project.getExportFilename?.() || filename;
+    } else if (project?._yjsBridge?.exporter) {
+      blob = await project._yjsBridge.exporter.exportToBlob();
+      filename = project._yjsBridge.exporter.buildFilename?.() || filename;
+    } else {
+      throw new Error('Export not available');
+    }
+    var bytes = await blob.arrayBuffer();
+    return { bytes: bytes, filename: filename, mimeType: blob.type || 'application/zip' };
+  }
+
+  function applyHideUI(h) {
+    if (!h) return;
+    var b = document.body;
+    if (h.fileMenu) b.setAttribute('data-exe-hide-file-menu', 'true');
+    if (h.saveButton) b.setAttribute('data-exe-hide-save', 'true');
+    if (h.userMenu) b.setAttribute('data-exe-hide-user-menu', 'true');
+  }
+
+  async function notifyDocumentLoaded() {
+    var start = Date.now();
+    while (Date.now() - start < 30000) {
+      var mgr = window.eXeLearning?.app?.project?._yjsBridge?.documentManager;
+      if (mgr && !documentLoadedNotified) {
+        documentLoadedNotified = true;
+        post({ type: 'DOCUMENT_LOADED' });
+        var ydoc = mgr.ydoc;
+        if (ydoc && typeof ydoc.on === 'function') {
+          var changed = false;
+          ydoc.on('update', function() {
+            if (!changed) { changed = true; post({ type: 'DOCUMENT_CHANGED' }); }
+          });
+        }
+        return;
+      }
+      await new Promise(function(r) { setTimeout(r, 150); });
+    }
+  }
+
+  async function handleMessage(event) {
+    var msg = event?.data;
+    if (!msg?.type || msg.source === 'procomeka-bridge') return;
+    try {
+      switch (msg.type) {
+        case 'WP_REQUEST_SAVE':
+          var exported = await exportToBytes();
+          post({ type: 'WP_SAVE_FILE', requestId: msg.requestId, bytes: exported.bytes, filename: exported.filename, mimeType: exported.mimeType, size: exported.bytes.byteLength });
+          break;
+        case 'CONFIGURE':
+          applyHideUI(msg.data?.hideUI);
+          post({ type: 'CONFIGURE_SUCCESS', requestId: msg.requestId });
+          break;
+        case 'WP_SAVE_CONFIRMED':
+          var mgr2 = window.eXeLearning?.app?.project?._yjsBridge?.documentManager;
+          if (mgr2?.markClean) mgr2.markClean();
+          window.onbeforeunload = null;
+          post({ type: 'WP_SAVE_CONFIRMED_ACK', requestId: msg.requestId });
+          break;
+      }
+    } catch (err) {
+      post({ type: (msg.type || 'UNKNOWN') + '_ERROR', requestId: msg.requestId, error: err?.message || 'Unknown error' });
+    }
+  }
+
+  async function init() {
+    if (window.eXeLearning?.ready) await window.eXeLearning.ready;
+    window.addEventListener('message', handleMessage);
+    post({ type: 'EXELEARNING_READY', version: window.eXeLearning?.version || 'unknown', capabilities: ['WP_REQUEST_SAVE', 'CONFIGURE'] });
+    notifyDocumentLoaded();
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); post({ type: 'DOCUMENT_CHANGED' }); }
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

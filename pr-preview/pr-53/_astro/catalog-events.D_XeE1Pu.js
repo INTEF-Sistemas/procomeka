@@ -1,0 +1,1 @@
+const e="catalog:querychange",o="catalog:querysync";function t(a,n){typeof window>"u"||window.dispatchEvent(new CustomEvent(a,{detail:{query:n}}))}function c(a){t(e,a)}function i(a){t(o,a)}export{o as C,i as a,e as b,c as d};

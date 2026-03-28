@@ -164,30 +164,34 @@
 		{
 			"id": "elpx-res-1",
 			"resourceId": "res-1",
-			"hash": "a41334bd041619ece429db5aefc211c3dd1ca0f0",
+			"hash": "5be8649778feb95e02d65c904adb67475eb89afa",
 			"hasPreview": 1,
-			"originalFilename": "really-simple-test-project.elpx"
+			"originalFilename": "really-simple-test-project.elpx",
+			"elpxMetadata": null
 		},
 		{
 			"id": "elpx-res-2",
 			"resourceId": "res-2",
-			"hash": "5f98c0fa539f0f1007e31e5437d5cde7186402db",
+			"hash": "7d39d15ce060d43a0696ed59b24d96660473b2d0",
 			"hasPreview": 1,
-			"originalFilename": "mermaid.elpx"
+			"originalFilename": "mermaid.elpx",
+			"elpxMetadata": null
 		},
 		{
 			"id": "elpx-res-3",
 			"resourceId": "res-3",
-			"hash": "2688ac13d15b5dcb5ac99e0a45a89d5790cdd80b",
+			"hash": "0ea356d1470dd316aa850ade42ec6df735f131ca",
 			"hasPreview": 1,
-			"originalFilename": "propiedades.elpx"
+			"originalFilename": "propiedades.elpx",
+			"elpxMetadata": null
 		},
 		{
 			"id": "elpx-res-5",
 			"resourceId": "res-5",
-			"hash": "551babebabe755a2529e4c116892aedad8b4c375",
+			"hash": "b1015f1b86453ce296ccc941f3b330f00673d271",
 			"hasPreview": 1,
-			"originalFilename": "idevice-text.elpx"
+			"originalFilename": "idevice-text.elpx",
+			"elpxMetadata": null
 		}
 	]
 }
