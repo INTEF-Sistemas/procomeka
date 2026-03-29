@@ -1,1 +1,0 @@
-import{j as i}from"./jsx-runtime.D_zvdyIk.js";function t({id:a,message:e,variant:s="neutral",polite:r=!0}){const c=["admin-feedback",s==="success"?"admin-feedback--success":"",s==="error"?"admin-feedback--error":""].filter(Boolean).join(" ");return i.jsx("div",{id:a,className:e?c:void 0,role:r?"status":"alert","aria-live":r?"polite":"assertive",children:e})}export{t as A};

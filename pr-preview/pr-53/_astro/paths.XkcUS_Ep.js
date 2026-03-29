@@ -1,1 +1,0 @@
-function n(){return typeof window<"u"&&window.__BASE_URL__||typeof import.meta<"u"&&"/procomeka/pr-preview/pr-53/"||"/"}function r(){return typeof window<"u"&&window.__PREVIEW_MODE__===!0}function o(e){return n()+e.replace(/^\//,"")}export{n as getBaseUrl,r as isPreviewMode,o as url};
