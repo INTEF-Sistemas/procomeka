@@ -192,6 +192,12 @@ export class HttpApiClient implements ApiClient {
 		return res.json();
 	}
 
+	async getElpxProject(resourceId: string): Promise<import("./api-client.ts").ElpxProjectInfo | null> {
+		const res = await fetch(`/api/admin/resources/${resourceId}/elpx`, { credentials: "include" });
+		if (!res.ok) return null;
+		return res.json();
+	}
+
 	async listUsers(opts?: { q?: string; role?: string; limit?: number; offset?: number }): Promise<PaginatedResult<UserRecord>> {
 		const params = new URLSearchParams();
 		if (opts?.q) params.set("q", opts.q);

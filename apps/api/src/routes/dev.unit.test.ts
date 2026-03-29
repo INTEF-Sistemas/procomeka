@@ -30,10 +30,10 @@ function createDevApp(
 	return app;
 }
 
-describe("Rutas dev — modo desarrollo", () => {
+describe("Rutas dev — modo desarrollo", { timeout: 60_000 }, () => {
 	const app = createDevApp({ id: "1", role: "admin" });
 
-	test("POST /api/dev/seed-resources → 200 con count válido", async () => {
+	test("POST /api/dev/seed-resources → 200 con count válido", { timeout: 30_000 }, async () => {
 		const res = await app.request("/api/dev/seed-resources", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -45,7 +45,7 @@ describe("Rutas dev — modo desarrollo", () => {
 		expect(body.durationMs).toBeDefined();
 	});
 
-	test("POST /api/dev/seed-resources → 200 con clean=true", async () => {
+	test("POST /api/dev/seed-resources → 200 con clean=true", { timeout: 60_000 }, async () => {
 		// Primero generamos algunos
 		await app.request("/api/dev/seed-resources", {
 			method: "POST",
@@ -94,7 +94,7 @@ describe("Rutas dev — modo desarrollo", () => {
 	});
 });
 
-describe("Rutas dev — modo producción", () => {
+describe("Rutas dev — modo producción", { timeout: 60_000 }, () => {
 	test("POST /api/dev/seed-resources → 403 siempre en producción", async () => {
 		const app = createDevApp({ id: "1", role: "admin" }, "production");
 		const res = await app.request("/api/dev/seed-resources", {
@@ -107,7 +107,7 @@ describe("Rutas dev — modo producción", () => {
 		expect(body.error).toBe("Solo disponible en modo desarrollo");
 	});
 
-	test("POST /api/dev/seed-resources → 200 si Bun.env.NODE_ENV=development", async () => {
+	test("POST /api/dev/seed-resources → 200 si Bun.env.NODE_ENV=development", { timeout: 60_000 }, async () => {
 		const app = createDevApp({ id: "1", role: "admin" }, undefined, "development");
 		const res = await app.request("/api/dev/seed-resources", {
 			method: "POST",

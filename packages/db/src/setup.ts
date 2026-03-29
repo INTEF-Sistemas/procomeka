@@ -111,6 +111,19 @@ export const SCHEMA_STATEMENTS = [
 		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 	)`,
+	`CREATE TABLE IF NOT EXISTS "elpx_projects" (
+		id TEXT PRIMARY KEY,
+		resource_id TEXT NOT NULL REFERENCES "resources"(id) ON DELETE CASCADE UNIQUE,
+		hash VARCHAR(64) NOT NULL UNIQUE,
+		extract_path TEXT NOT NULL,
+		original_filename TEXT NOT NULL,
+		upload_session_id TEXT,
+		version INTEGER NOT NULL DEFAULT 3,
+		has_preview INTEGER NOT NULL DEFAULT 0,
+		elpx_metadata TEXT,
+		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+	)`,
 	`CREATE TABLE IF NOT EXISTS "resource_subjects" (
 		resource_id TEXT NOT NULL REFERENCES "resources"(id) ON DELETE CASCADE,
 		subject VARCHAR(255) NOT NULL
@@ -151,6 +164,8 @@ export const SCHEMA_STATEMENTS = [
 	`CREATE INDEX IF NOT EXISTS idx_upload_sessions_resource_id ON upload_sessions(resource_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_upload_sessions_owner_id ON upload_sessions(owner_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_upload_sessions_status ON upload_sessions(status)`,
+	`CREATE INDEX IF NOT EXISTS idx_elpx_projects_hash ON elpx_projects(hash)`,
+	`CREATE INDEX IF NOT EXISTS idx_elpx_projects_resource_id ON elpx_projects(resource_id)`,
 	`CREATE INDEX IF NOT EXISTS idx_taxonomies_type ON taxonomies(type)`,
 	`DO $$ BEGIN
 		ALTER TABLE "resources" ADD COLUMN created_by TEXT REFERENCES "user"(id);

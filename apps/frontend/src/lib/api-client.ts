@@ -24,6 +24,7 @@ export interface Resource {
 	subjects?: string[];
 	levels?: string[];
 	mediaItems?: MediaItemRecord[];
+	elpxPreview?: { hash: string; previewUrl: string } | null;
 }
 
 export interface ResourceListResult {
@@ -106,6 +107,25 @@ export interface UploadSessionRecord {
 	updatedAt?: string | number | Date | null;
 }
 
+export interface ElpxProjectInfo {
+	id: string;
+	hash: string;
+	hasPreview: boolean;
+	previewUrl: string | null;
+	elpxFileUrl: string | null;
+	metadata: {
+		title: string;
+		description: string;
+		author: string;
+		license: string;
+		language: string;
+		learningResourceType: string;
+	} | null;
+	originalFilename: string;
+	version: number;
+	createdAt: string | number | Date | null;
+}
+
 export interface UploadConfig {
 	maxFileSizeBytes: number;
 	maxFilesPerBatch: number;
@@ -184,6 +204,7 @@ export interface ApiClient {
 	deleteResource(id: string): Promise<void>;
 	getUploadConfig(): Promise<UploadConfig>;
 	cancelUpload(id: string): Promise<{ id: string; cancelled: boolean }>;
+	getElpxProject(resourceId: string): Promise<ElpxProjectInfo | null>;
 
 	listUsers(opts?: { q?: string; role?: string; limit?: number; offset?: number }): Promise<PaginatedResult<UserRecord>>;
 	getUserById(id: string): Promise<UserRecord | null>;

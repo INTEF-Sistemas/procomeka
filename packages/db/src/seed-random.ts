@@ -3,7 +3,10 @@ import {
 	resources,
 	resourceSubjects,
 	resourceLevels,
+	mediaItems,
 } from "./schema/resources.ts";
+import { elpxProjects } from "./schema/elpx.ts";
+import { uploadSessions } from "./schema/uploads.ts";
 import { user } from "./schema/auth.ts";
 import {
 	VALID_LANGUAGES,
@@ -46,11 +49,25 @@ const LEVELS = [
 	"universidad",
 ];
 
+export interface ElpxSeedConfig {
+	/** Absolute paths to .elpx fixture files */
+	fixtures: string[];
+	/** Base storage dir (e.g. local-data/uploads) */
+	storageDir: string;
+	/** Function to process an .elpx file; returns hash, extractPath, hasPreview, metadata */
+	processElpx: (filePath: string, storageDir: string) => Promise<{
+		hash: string;
+		extractPath: string;
+		hasPreview: boolean;
+		metadata: Record<string, string>;
+	}>;
+}
+
 export async function seedRandomResources(
 	// biome-ignore lint: generic drizzle db type
 	db: any,
 	count: number,
-	options: { clean?: boolean } = {},
+	options: { clean?: boolean; elpx?: ElpxSeedConfig } = {},
 ) {
 	if (options.clean) {
 		// Borrar recursos generados (identificados por un prefijo en el externalId o similar)
@@ -66,6 +83,7 @@ export async function seedRandomResources(
 		const ids = seedResourceIds.map((r: { id: string }) => r.id);
 
 		if (ids.length > 0) {
+			await db.delete(elpxProjects).where(inArray(elpxProjects.resourceId, ids));
 			await db.delete(resourceSubjects).where(inArray(resourceSubjects.resourceId, ids));
 			await db.delete(resourceLevels).where(inArray(resourceLevels.resourceId, ids));
 			await db.delete(resources).where(inArray(resources.id, ids));
@@ -145,6 +163,48 @@ export async function seedRandomResources(
 		}
 		if (levelsToInsert.length > 0) {
 			await db.insert(resourceLevels).values(levelsToInsert);
+		}
+
+		// Randomly attach .elpx fixtures to ~40% of resources in the batch
+		if (options.elpx && options.elpx.fixtures.length > 0) {
+			const candidates = resourcesToInsert.filter(() => Math.random() < 0.4);
+			for (const res of candidates) {
+				try {
+					const fixture = faker.helpers.arrayElement(options.elpx.fixtures);
+					const result = await options.elpx.processElpx(fixture, options.elpx.storageDir);
+
+					const uploadId = crypto.randomUUID();
+					const filename = fixture.split("/").pop() ?? "resource.elpx";
+
+					await db.insert(mediaItems).values({
+						id: crypto.randomUUID(),
+						resourceId: res.id,
+						type: "file",
+						mimeType: "application/zip",
+						url: `/api/v1/uploads/${uploadId}/content`,
+						fileSize: null,
+						filename,
+						isPrimary: 1,
+					});
+
+					await db.insert(elpxProjects).values({
+						id: crypto.randomUUID(),
+						resourceId: res.id,
+						hash: result.hash,
+						extractPath: result.extractPath,
+						originalFilename: filename,
+						uploadSessionId: null,
+						version: 3,
+						hasPreview: result.hasPreview ? 1 : 0,
+						elpxMetadata: JSON.stringify(result.metadata),
+						createdAt: new Date(),
+						updatedAt: new Date(),
+					});
+				} catch (err) {
+					// Skip this resource if elpx processing fails
+					console.error(`[seed] Error processing elpx for ${res.id}:`, err);
+				}
+			}
 		}
 
 		createdCount += currentBatchSize;

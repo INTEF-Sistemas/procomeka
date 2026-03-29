@@ -21,7 +21,21 @@ publicRoutes.get("/resources", async (c) => {
 		language,
 		license,
 	});
-	return c.json(result);
+
+	// Enrich with elpx preview URLs
+	const resourceIds = result.data.map((r: { id: string }) => r.id);
+	const elpxProjects = await repo.listElpxProjectsByResourceIds(getDb().db, resourceIds);
+	const elpxMap = new Map(elpxProjects.map((e: { resourceId: string; hash: string; hasPreview: number }) => [e.resourceId, e]));
+
+	const data = result.data.map((r: { id: string }) => {
+		const elpx = elpxMap.get(r.id);
+		const elpxPreview = elpx?.hasPreview === 1
+			? { hash: elpx.hash, previewUrl: `/api/v1/elpx/${elpx.hash}/` }
+			: null;
+		return { ...r, elpxPreview };
+	});
+
+	return c.json({ ...result, data });
 });
 
 publicRoutes.get("/resources/:slug", async (c) => {
@@ -30,7 +44,14 @@ publicRoutes.get("/resources/:slug", async (c) => {
 	if (!resource || resource.editorialStatus !== "published") {
 		return c.json({ error: "Recurso no encontrado" }, 404);
 	}
-	return c.json(resource);
+
+	// Include elpx preview URL if the resource has an associated eXeLearning project
+	const elpx = await repo.getElpxProjectByResourceId(getDb().db, resource.id);
+	const elpxPreview = elpx?.hasPreview === 1
+		? { hash: elpx.hash, previewUrl: `/api/v1/elpx/${elpx.hash}/` }
+		: null;
+
+	return c.json({ ...resource, elpxPreview });
 });
 
 publicRoutes.get("/uploads/:id/content", async (c) => {

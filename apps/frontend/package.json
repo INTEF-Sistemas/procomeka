@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
-		"build:preview": "PREVIEW_STATIC=true astro build",
+		"build:preview": "bun run scripts/prepare-elpx-preview.ts && PREVIEW_STATIC=true astro build",
 		"preview": "astro preview",
 		"test": "bun test"
 	},

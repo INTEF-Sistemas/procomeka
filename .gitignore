@@ -24,6 +24,13 @@ local.db
 # Preview serve directory
 .preview-serve
 
+# Generated elpx preview content and editor (run prepare-elpx-preview.ts to regenerate)
+apps/frontend/public/api/
+apps/frontend/public/exelearning-editor/
+
+# eXeLearning static editor source (run `make download-exelearning-editor` to download)
+apps/api/static/exelearning-editor/
+
 # dotenv environment variable files
 .env
 .env.development.local

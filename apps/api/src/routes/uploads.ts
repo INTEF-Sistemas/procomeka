@@ -11,11 +11,13 @@ import {
 	canManageResourceUpload,
 	computeFileSha256,
 	ensureUploadStorageDir,
+	extractFileExtension,
 	getUploadConfig,
 	resolveStoredFilePath,
 	type UploadUser,
 	validateUploadCandidate,
 } from "../uploads/config.ts";
+import { processElpxUpload } from "../services/elpx-processor.ts";
 
 const USER_HEADER = "x-procomeka-upload-user";
 
@@ -181,6 +183,27 @@ async function getTusServer() {
 					mediaItemId: media.id,
 					finalChecksum,
 				});
+
+				// Post-process .elpx files: extract and store metadata
+				const ext = extractFileExtension(session.originalFilename);
+				if (ext === ".elpx" || ext === ".elp") {
+					try {
+						const result = await processElpxUpload(finalPath, config.storageDir);
+						await repo.createElpxProject(getDb().db, {
+							resourceId: session.resourceId,
+							hash: result.hash,
+							extractPath: result.extractPath,
+							originalFilename: session.originalFilename,
+							uploadSessionId: upload.id,
+							version: 3,
+							hasPreview: result.hasPreview ? 1 : 0,
+							elpxMetadata: JSON.stringify(result.metadata),
+						});
+					} catch (err) {
+						// Log but don't fail the upload — the file is saved regardless
+						console.error("[elpx] Error procesando .elpx:", err);
+					}
+				}
 
 				return {
 					headers: {

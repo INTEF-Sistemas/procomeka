@@ -14,6 +14,7 @@ import { collections, collectionResources } from "./schema/collections.ts";
 import { user } from "./schema/auth.ts";
 import { taxonomies } from "./schema/taxonomies.ts";
 import { uploadSessions } from "./schema/uploads.ts";
+import { elpxProjects } from "./schema/elpx.ts";
 
 type DrizzleDB = {
 	select: (...args: unknown[]) => unknown;
@@ -907,4 +908,70 @@ export async function listCollectionResources(
 		.orderBy(asc(collectionResources.position))
 		.limit(limit)
 		.offset(offset);
+}
+
+// --- eXeLearning Projects ---
+
+export async function createElpxProject(
+	db: DrizzleDB,
+	data: {
+		resourceId: string;
+		hash: string;
+		extractPath: string;
+		originalFilename: string;
+		uploadSessionId?: string | null;
+		version?: number;
+		hasPreview?: number;
+		elpxMetadata?: string | null;
+	},
+) {
+	const id = crypto.randomUUID();
+	await db.insert(elpxProjects).values({
+		id,
+		resourceId: data.resourceId,
+		hash: data.hash,
+		extractPath: data.extractPath,
+		originalFilename: data.originalFilename,
+		uploadSessionId: data.uploadSessionId ?? null,
+		version: data.version ?? 3,
+		hasPreview: data.hasPreview ?? 0,
+		elpxMetadata: data.elpxMetadata ?? null,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	});
+	return { id };
+}
+
+export async function getElpxProjectByResourceId(db: DrizzleDB, resourceId: string) {
+	const rows = await db
+		.select()
+		.from(elpxProjects)
+		.where(eq(elpxProjects.resourceId, resourceId))
+		.limit(1);
+	return rows[0] ?? null;
+}
+
+export async function getElpxProjectByHash(db: DrizzleDB, hash: string) {
+	const rows = await db
+		.select()
+		.from(elpxProjects)
+		.where(eq(elpxProjects.hash, hash))
+		.limit(1);
+	return rows[0] ?? null;
+}
+
+export async function deleteElpxProject(db: DrizzleDB, id: string) {
+	await db.delete(elpxProjects).where(eq(elpxProjects.id, id));
+}
+
+export async function listElpxProjectsByResourceIds(db: DrizzleDB, resourceIds: string[]) {
+	if (!resourceIds.length) return [];
+	return db
+		.select({
+			resourceId: elpxProjects.resourceId,
+			hash: elpxProjects.hash,
+			hasPreview: elpxProjects.hasPreview,
+		})
+		.from(elpxProjects)
+		.where(sql`${elpxProjects.resourceId} IN (${sql.join(resourceIds.map(id => sql`${id}`), sql`, `)})`);
 }

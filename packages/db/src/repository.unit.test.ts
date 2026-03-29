@@ -3,17 +3,27 @@ import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "./schema/index.ts";
 import {
+	addResourceToCollection,
 	createCollection,
+	createElpxProject,
+	createResource,
 	createTaxonomy,
 	deleteCollection,
+	deleteElpxProject,
+	deleteMediaItem,
 	deleteTaxonomy,
 	ensureUser,
+	failUploadSession,
 	getCollectionById,
+	getElpxProjectByHash,
+	getElpxProjectByResourceId,
 	getTaxonomyById,
 	getUserById,
+	listCollectionResources,
 	listCollections,
 	listTaxonomies,
 	listUsers,
+	removeResourceFromCollection,
 	updateCollection,
 	updateTaxonomy,
 	updateUser,
@@ -144,5 +154,101 @@ describe("repository admin helpers", () => {
 
 		await deleteTaxonomy(db, child.id);
 		expect(await getTaxonomyById(db, child.id)).toBeNull();
+	});
+});
+
+describe("repository elpx projects", () => {
+	let db: ReturnType<typeof drizzle>;
+
+	let resourceId: string;
+
+	beforeEach(async () => {
+		const pglite = new PGlite();
+		await createTables(pglite);
+		db = drizzle(pglite, { schema });
+		await ensureUser(db, { id: "u1", email: "a@b.com", name: "A", role: "admin" });
+		const res = await createResource(db, {
+			title: "Recurso",
+			description: "Desc",
+			language: "es",
+			license: "cc-by",
+			resourceType: "documento",
+			createdBy: "u1",
+		});
+		resourceId = res.id;
+	});
+
+	test("crea, consulta por resource y por hash, y borra", async () => {
+
+		const result = await createElpxProject(db, {
+			resourceId,
+			hash: "abc123",
+			extractPath: "/tmp/test",
+			originalFilename: "test.elpx",
+			hasPreview: 1,
+			elpxMetadata: JSON.stringify({ title: "Test" }),
+		});
+		expect(result.id).toBeTruthy();
+
+		const byResource = await getElpxProjectByResourceId(db, resourceId);
+		expect(byResource).not.toBeNull();
+		expect(byResource!.hash).toBe("abc123");
+		expect(byResource!.originalFilename).toBe("test.elpx");
+
+		const byHash = await getElpxProjectByHash(db, "abc123");
+		expect(byHash).not.toBeNull();
+		expect(byHash!.resourceId).toBe(resourceId);
+
+		const notFound = await getElpxProjectByHash(db, "nonexistent");
+		expect(notFound).toBeNull();
+
+		await deleteElpxProject(db, result.id);
+		expect(await getElpxProjectByResourceId(db, resourceId)).toBeNull();
+	});
+});
+
+describe("repository collection-resources", () => {
+	let db: ReturnType<typeof drizzle>;
+	let collectionId: string;
+	let resourceId: string;
+
+	beforeEach(async () => {
+		const pglite = new PGlite();
+		await createTables(pglite);
+		db = drizzle(pglite, { schema });
+		await ensureUser(db, { id: "u1", email: "a@b.com", name: "A", role: "admin" });
+
+		const col = await createCollection(db, { title: "Col", description: "D", curatorId: "u1" });
+		collectionId = col.id;
+
+		const res = await createResource(db, {
+			title: "Recurso",
+			description: "Desc",
+			language: "es",
+			license: "cc-by",
+			resourceType: "documento",
+			createdBy: "u1",
+		});
+		resourceId = res.id;
+	});
+
+	test("añade, lista y elimina recurso de colección", async () => {
+		await addResourceToCollection(db, collectionId, resourceId, 1);
+
+		const items = await listCollectionResources(db, collectionId);
+		expect(items).toHaveLength(1);
+		expect(items[0].resourceId).toBe(resourceId);
+		expect(items[0].position).toBe(1);
+
+		await removeResourceFromCollection(db, collectionId, resourceId);
+		const after = await listCollectionResources(db, collectionId);
+		expect(after).toHaveLength(0);
+	});
+
+	test("posición por defecto es 0", async () => {
+		await addResourceToCollection(db, collectionId, resourceId);
+		const items = await listCollectionResources(db, collectionId);
+		expect(items).toHaveLength(1);
+		expect(items[0].position).toBe(0);
 	});
 });

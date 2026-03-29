@@ -63,14 +63,46 @@ function summaryLabel(total: number, startItem: number, endItem: number) {
 function ResourceCard({ resource }: { resource: Resource }) {
 	const description = resource.description || "";
 	const clipped = description.length > 140 ? `${description.slice(0, 140)}...` : description;
+	const hasPreview = !!resource.elpxPreview?.previewUrl;
+	const previewRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!previewRef.current) return;
+		const wrapper = previewRef.current;
+		const iframe = wrapper.querySelector("iframe");
+		if (!iframe) return;
+		const IFRAME_W = 1200, IFRAME_H = 675;
+		function rescale() {
+			const w = wrapper.clientWidth || 280;
+			const h = wrapper.clientHeight || 158;
+			const scale = Math.min(w / IFRAME_W, h / IFRAME_H);
+			iframe!.style.transform = `scale(${scale})`;
+		}
+		rescale();
+		window.addEventListener("resize", rescale);
+		return () => window.removeEventListener("resize", rescale);
+	}, [hasPreview]);
 
 	return (
-		<a href={url(`recurso?slug=${resource.slug}`)} className="resource-card">
-			<div
-				className="card-icon"
-				aria-hidden="true"
-				dangerouslySetInnerHTML={{ __html: getResourceIcon(resource.resourceType) }}
-			/>
+		<a href={url(`recurso?slug=${resource.slug}`)} className={`resource-card${hasPreview ? " has-preview" : ""}`}>
+			{hasPreview ? (
+				<div className="card-preview" ref={previewRef}>
+					<iframe
+						src={resource.elpxPreview!.previewUrl}
+						loading="lazy"
+						tabIndex={-1}
+						sandbox="allow-scripts allow-same-origin"
+						title="Vista previa"
+					/>
+					<div className="card-preview-overlay" />
+				</div>
+			) : (
+				<div
+					className="card-icon"
+					aria-hidden="true"
+					dangerouslySetInnerHTML={{ __html: getResourceIcon(resource.resourceType) }}
+				/>
+			)}
 			<div className="card-body">
 				<h3>{resource.title}</h3>
 				<p>{clipped}</p>

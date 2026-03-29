@@ -1,4 +1,5 @@
 import { hashPassword } from "better-auth/crypto";
+import path from "node:path";
 import { DEV_USERS, DEV_RESOURCES } from "@procomeka/db/seed-data";
 
 type SeedLog = Pick<typeof console, "log">;
@@ -7,6 +8,28 @@ type SeedClient = {
 	query: (statement: string, params?: unknown[]) => Promise<SeedQueryResult>;
 	close: () => Promise<void>;
 };
+
+/** Try to load elpx fixtures and processor — returns null if unavailable */
+async function loadElpxSupport() {
+	try {
+		// Resolve from repo root (import.meta.dir is apps/cli/src/commands/)
+		const repoRoot = path.resolve(import.meta.dir, "../../../..");
+		const fixturesDir = path.join(repoRoot, "apps/api/src/test-fixtures/elpx");
+		const { readdir, mkdir } = await import("node:fs/promises");
+		const files = await readdir(fixturesDir);
+		const fixtures = files.filter(f => f.endsWith(".elpx")).map(f => path.join(fixturesDir, f));
+		if (fixtures.length === 0) return null;
+
+		const { processElpxUpload } = await import("../../../api/src/services/elpx-processor.ts");
+		const storageDir = process.env.UPLOAD_STORAGE_DIR ?? path.join(repoRoot, "apps/api/local-data/uploads");
+		await mkdir(storageDir, { recursive: true });
+
+		return { fixtures, processElpx: processElpxUpload, storageDir };
+	} catch (err) {
+		console.error("  [elpx] No se pudieron cargar fixtures:", err);
+		return null;
+	}
+}
 
 export function resolveSeedMode(env: Record<string, string | undefined> = process.env) {
 	return env.DATABASE_URL ? "postgres" : "pglite";
@@ -54,6 +77,11 @@ export async function seedWithClient(
 		}
 
 		log.log("\nRecursos de ejemplo:\n");
+		const elpxSupport = await loadElpxSupport();
+		if (elpxSupport) {
+			log.log(`  (${elpxSupport.fixtures.length} fixtures .elpx disponibles)\n`);
+		}
+
 		for (const r of DEV_RESOURCES) {
 			const existing = await client.query(`SELECT id FROM "resources" WHERE id = $1`, [r.id]);
 			if (getResultLength(existing) > 0) {
@@ -73,7 +101,45 @@ export async function seedWithClient(
 				await client.query(`INSERT INTO "resource_levels" (resource_id, level) VALUES ($1, $2)`, [r.id, l]);
 			}
 
-			log.log(`  + ${r.slug} [${r.editorialStatus}]`);
+			// Always assign an .elpx fixture to demo resources
+			if (elpxSupport) {
+				try {
+					const { copyFile, mkdir } = await import("node:fs/promises");
+					const fixture = elpxSupport.fixtures[Math.floor(Math.random() * elpxSupport.fixtures.length)];
+					const result = await elpxSupport.processElpx(fixture, elpxSupport.storageDir);
+					const filename = path.basename(fixture);
+					const uploadId = crypto.randomUUID();
+					const mediaId = crypto.randomUUID();
+					const elpxId = crypto.randomUUID();
+
+					// Copy the .elpx raw file to tus storage path so download endpoint works
+					await mkdir(elpxSupport.storageDir, { recursive: true });
+					await copyFile(fixture, path.join(elpxSupport.storageDir, uploadId));
+
+					// Create media item first (upload_session FK references it)
+					await client.query(
+						`INSERT INTO "media_items" (id, resource_id, type, mime_type, url, filename, is_primary) VALUES ($1, $2, 'file', 'application/zip', $3, $4, 1)`,
+						[mediaId, r.id, `/api/v1/uploads/${uploadId}/content`, filename],
+					);
+
+					// Create completed upload session so the public download endpoint works
+					await client.query(
+						`INSERT INTO "upload_sessions" (id, resource_id, owner_id, media_item_id, status, original_filename, mime_type, storage_key, public_url, received_bytes, completed_at, created_at, updated_at) VALUES ($1, $2, (SELECT id FROM "user" LIMIT 1), $3, 'completed', $4, 'application/zip', $5, $6, $7, $8, $9, $10)`,
+						[uploadId, r.id, mediaId, filename, `resource/${r.id}/${uploadId}/${filename}`, `/api/v1/uploads/${uploadId}/content`, 0, now, now, now],
+					);
+
+					await client.query(
+						`INSERT INTO "elpx_projects" (id, resource_id, hash, extract_path, original_filename, version, has_preview, elpx_metadata, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, 3, $6, $7, $8, $9)`,
+						[elpxId, r.id, result.hash, result.extractPath, filename, result.hasPreview ? 1 : 0, JSON.stringify(result.metadata), now, now],
+					);
+
+					log.log(`  + ${r.slug} [${r.editorialStatus}] + elpx: ${filename}`);
+				} catch (err) {
+					log.log(`  + ${r.slug} [${r.editorialStatus}] (elpx error: ${err})`);
+				}
+			} else {
+				log.log(`  + ${r.slug} [${r.editorialStatus}]`);
+			}
 		}
 	} finally {
 		await client.close();

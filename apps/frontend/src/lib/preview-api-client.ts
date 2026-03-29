@@ -31,6 +31,7 @@ interface SeedData {
 	}[];
 	resourceSubjects: { resourceId: string; subject: string }[];
 	resourceLevels: { resourceId: string; level: string }[];
+	elpxProjects?: { id: string; resourceId: string; hash: string; originalFilename: string; hasPreview: number }[];
 }
 
 const ROLE_KEY = "procomeka-preview-role";
@@ -109,8 +110,8 @@ export class PreviewApiClient implements ApiClient {
 
 	private async loadSeedData() {
 		if (!this.seedData) {
-			const base = (window as unknown as { __BASE_URL__: string }).__BASE_URL__ ?? "/";
-			const res = await fetch(`${base}preview/seed.json`);
+			const { getBaseUrl } = await import("./paths.ts");
+			const res = await fetch(`${getBaseUrl()}preview/seed.json`);
 			this.seedData = await res.json();
 		}
 
@@ -144,9 +145,37 @@ export class PreviewApiClient implements ApiClient {
 				[l.resourceId, l.level],
 			);
 		}
+
+		if (seed.elpxProjects) {
+			for (const e of seed.elpxProjects) {
+				await this.pglite.query(
+					`INSERT INTO "elpx_projects" (id, resource_id, hash, extract_path, original_filename, version, has_preview, created_at, updated_at) VALUES ($1, $2, $3, '', $4, 3, $5, $6, $7) ON CONFLICT (id) DO NOTHING`,
+					[e.id, e.resourceId, e.hash, e.originalFilename, e.hasPreview, now, now],
+				);
+			}
+		}
 	}
 
 	// --- Public API ---
+
+	private async enrichWithElpx(data: any[]) {
+		if (!data.length) return data;
+		const ids = data.map((r: any) => r.id);
+		const { listElpxProjectsByResourceIds } = await import("@procomeka/db/repository");
+		const { resolveElpxPreviewUrl } = await import("./elpx-preview-service.ts");
+		const elpxList = await listElpxProjectsByResourceIds(this.db, ids);
+		const elpxMap = new Map(elpxList.map((e: any) => [e.resourceId, e]));
+
+		// Resolve preview URLs in parallel
+		const previews = await Promise.all(data.map(async (r: any) => {
+			const elpx = elpxMap.get(r.id);
+			if (!elpx || elpx.hasPreview !== 1) return null;
+			const previewUrl = await resolveElpxPreviewUrl(elpx.hash, elpx.originalFilename);
+			return previewUrl ? { hash: elpx.hash, previewUrl } : null;
+		}));
+
+		return data.map((r: any, i: number) => ({ ...r, elpxPreview: previews[i] }));
+	}
 
 	async listResources(opts?: {
 		q?: string;
@@ -157,7 +186,7 @@ export class PreviewApiClient implements ApiClient {
 		license?: string;
 	}): Promise<ResourceListResult> {
 		const { listResources: list } = await import("@procomeka/db/repository");
-		return list(this.db, {
+		const result = await list(this.db, {
 			limit: opts?.limit,
 			offset: opts?.offset,
 			search: opts?.q,
@@ -166,11 +195,15 @@ export class PreviewApiClient implements ApiClient {
 			language: opts?.language,
 			license: opts?.license,
 		});
+		return { ...result, data: await this.enrichWithElpx(result.data) };
 	}
 
 	async getResourceBySlug(slug: string): Promise<Resource | null> {
 		const { getResourceBySlug: get } = await import("@procomeka/db/repository");
-		return get(this.db, slug);
+		const r = await get(this.db, slug);
+		if (!r) return null;
+		const [enriched] = await this.enrichWithElpx([r]);
+		return enriched;
 	}
 
 	async getConfig(): Promise<AppConfig> {
@@ -330,6 +363,32 @@ export class PreviewApiClient implements ApiClient {
 
 	async cancelUpload(id: string): Promise<{ id: string; cancelled: boolean }> {
 		return { id, cancelled: true };
+	}
+
+	async getElpxProject(resourceId: string): Promise<import("./api-client.ts").ElpxProjectInfo | null> {
+		const { getElpxProjectByResourceId } = await import("@procomeka/db/repository");
+		const elpx = await getElpxProjectByResourceId(this.db, resourceId);
+		if (!elpx) return null;
+
+		const { getBaseUrl } = await import("./paths.ts");
+		const { resolveElpxPreviewUrl, loadElpxBlob } = await import("./elpx-preview-service.ts");
+		const base = getBaseUrl();
+
+		const storedBlob = await loadElpxBlob(elpx.hash, `${base}api/v1/elpx-raw/${elpx.hash}.elpx`);
+		const elpxFileUrl = storedBlob ? URL.createObjectURL(storedBlob) : `${base}api/v1/elpx-raw/${elpx.hash}.elpx`;
+		const previewUrl = await resolveElpxPreviewUrl(elpx.hash, elpx.originalFilename);
+
+		return {
+			id: elpx.id,
+			hash: elpx.hash,
+			hasPreview: elpx.hasPreview === 1 || previewUrl !== null,
+			previewUrl,
+			elpxFileUrl,
+			metadata: elpx.elpxMetadata ? JSON.parse(elpx.elpxMetadata) : null,
+			originalFilename: elpx.originalFilename,
+			version: elpx.version ?? 3,
+			createdAt: elpx.createdAt,
+		};
 	}
 
 	async listUsers(opts?: { q?: string; role?: string; limit?: number; offset?: number }) {

@@ -1,9 +1,29 @@
 {
 	"users": [
-		{ "id": "demo-admin", "email": "admin@example.com", "name": "Admin", "role": "admin" },
-		{ "id": "demo-curator", "email": "curator@example.com", "name": "Curator", "role": "curator" },
-		{ "id": "demo-author", "email": "author@example.com", "name": "Author", "role": "author" },
-		{ "id": "demo-reader", "email": "reader@example.com", "name": "Reader", "role": "reader" }
+		{
+			"id": "demo-admin",
+			"email": "admin@example.com",
+			"name": "Admin",
+			"role": "admin"
+		},
+		{
+			"id": "demo-curator",
+			"email": "curator@example.com",
+			"name": "Curator",
+			"role": "curator"
+		},
+		{
+			"id": "demo-author",
+			"email": "author@example.com",
+			"name": "Author",
+			"role": "author"
+		},
+		{
+			"id": "demo-reader",
+			"email": "reader@example.com",
+			"name": "Reader",
+			"role": "reader"
+		}
 	],
 	"resources": [
 		{
@@ -73,23 +93,105 @@
 		}
 	],
 	"resourceSubjects": [
-		{ "resourceId": "res-1", "subject": "informatica" },
-		{ "resourceId": "res-1", "subject": "matematicas" },
-		{ "resourceId": "res-2", "subject": "ciencias-naturales" },
-		{ "resourceId": "res-2", "subject": "geografia" },
-		{ "resourceId": "res-3", "subject": "matematicas" },
-		{ "resourceId": "res-4", "subject": "lengua-extranjera" },
-		{ "resourceId": "res-4", "subject": "literatura" },
-		{ "resourceId": "res-5", "subject": "informatica" },
-		{ "resourceId": "res-5", "subject": "educacion-civica" }
+		{
+			"resourceId": "res-1",
+			"subject": "informatica"
+		},
+		{
+			"resourceId": "res-1",
+			"subject": "matematicas"
+		},
+		{
+			"resourceId": "res-2",
+			"subject": "ciencias-naturales"
+		},
+		{
+			"resourceId": "res-2",
+			"subject": "geografia"
+		},
+		{
+			"resourceId": "res-3",
+			"subject": "matematicas"
+		},
+		{
+			"resourceId": "res-4",
+			"subject": "lengua-extranjera"
+		},
+		{
+			"resourceId": "res-4",
+			"subject": "literatura"
+		},
+		{
+			"resourceId": "res-5",
+			"subject": "informatica"
+		},
+		{
+			"resourceId": "res-5",
+			"subject": "educacion-civica"
+		}
 	],
 	"resourceLevels": [
-		{ "resourceId": "res-1", "level": "educacion-primaria" },
-		{ "resourceId": "res-2", "level": "educacion-secundaria-obligatoria" },
-		{ "resourceId": "res-3", "level": "educacion-primaria" },
-		{ "resourceId": "res-3", "level": "educacion-secundaria-obligatoria" },
-		{ "resourceId": "res-4", "level": "bachillerato" },
-		{ "resourceId": "res-5", "level": "educacion-primaria" },
-		{ "resourceId": "res-5", "level": "educacion-secundaria-obligatoria" }
+		{
+			"resourceId": "res-1",
+			"level": "educacion-primaria"
+		},
+		{
+			"resourceId": "res-2",
+			"level": "educacion-secundaria-obligatoria"
+		},
+		{
+			"resourceId": "res-3",
+			"level": "educacion-primaria"
+		},
+		{
+			"resourceId": "res-3",
+			"level": "educacion-secundaria-obligatoria"
+		},
+		{
+			"resourceId": "res-4",
+			"level": "bachillerato"
+		},
+		{
+			"resourceId": "res-5",
+			"level": "educacion-primaria"
+		},
+		{
+			"resourceId": "res-5",
+			"level": "educacion-secundaria-obligatoria"
+		}
+	],
+	"elpxProjects": [
+		{
+			"id": "elpx-res-1",
+			"resourceId": "res-1",
+			"hash": "5be8649778feb95e02d65c904adb67475eb89afa",
+			"hasPreview": 1,
+			"originalFilename": "really-simple-test-project.elpx",
+			"elpxMetadata": null
+		},
+		{
+			"id": "elpx-res-2",
+			"resourceId": "res-2",
+			"hash": "7d39d15ce060d43a0696ed59b24d96660473b2d0",
+			"hasPreview": 1,
+			"originalFilename": "mermaid.elpx",
+			"elpxMetadata": null
+		},
+		{
+			"id": "elpx-res-3",
+			"resourceId": "res-3",
+			"hash": "0ea356d1470dd316aa850ade42ec6df735f131ca",
+			"hasPreview": 1,
+			"originalFilename": "propiedades.elpx",
+			"elpxMetadata": null
+		},
+		{
+			"id": "elpx-res-5",
+			"resourceId": "res-5",
+			"hash": "b1015f1b86453ce296ccc941f3b330f00673d271",
+			"hasPreview": 1,
+			"originalFilename": "idevice-text.elpx",
+			"elpxMetadata": null
+		}
 	]
 }

@@ -10,7 +10,8 @@
 		"./repository": "./src/repository.ts",
 		"./validation": "./src/validation.ts",
 		"./seed-data": "./src/seed-data.ts",
-		"./seed-random": "./src/seed-random.ts"
+		"./seed-random": "./src/seed-random.ts",
+		"./elpx-metadata": "./src/elpx-metadata.ts"
 	},
 	"scripts": {
 		"db:generate": "drizzle-kit generate",

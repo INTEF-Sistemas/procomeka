@@ -5,13 +5,23 @@ import { url } from "./paths.ts";
 import { loadFilterOptions, RESOURCE_TYPE_OPTIONS, LANGUAGE_OPTIONS, LICENSE_OPTIONS } from "./resource-filters.ts";
 import { escapeHtml, TYPE_ICONS } from "./resource-display.ts";
 
-function renderCard(r: Record<string, string>): string {
+function renderCard(r: Record<string, any>): string {
 	const icon = TYPE_ICONS[r.resourceType] || "&#128196;";
 	const desc = (r.description || "").slice(0, 140);
 	const ellipsis = (r.description || "").length > 140 ? "..." : "";
+
+	const preview = r.elpxPreview?.previewUrl
+		? `<div class="card-preview">
+			<iframe src="${r.elpxPreview.previewUrl}" loading="lazy" tabindex="-1"
+				sandbox="allow-scripts allow-same-origin"
+				title="Vista previa"></iframe>
+			<div class="card-preview-overlay"></div>
+		</div>`
+		: `<div class="card-icon">${icon}</div>`;
+
 	return `
-		<a href="${url(`recurso?slug=${r.slug}`)}" class="resource-card">
-			<div class="card-icon">${icon}</div>
+		<a href="${url(`recurso?slug=${r.slug}`)}" class="resource-card${r.elpxPreview ? " has-preview" : ""}">
+			${preview}
 			<div class="card-body">
 				<h3>${escapeHtml(r.title || "")}</h3>
 				<p>${escapeHtml(desc)}${ellipsis}</p>
@@ -39,6 +49,21 @@ function renderPaginationHtml(currentPage: number, totalPages: number): string {
 			? `<span class="pag-ellipsis">&hellip;</span>`
 			: `<button class="pag-num${p === currentPage ? " active" : ""}" data-page="${p}">${p}</button>`
 	).join("");
+}
+
+/** Scale preview iframes to fit their container (like WordPress wp-exelearning plugin). */
+function scalePreviewIframes() {
+	const IFRAME_W = 1200;
+	const IFRAME_H = 675;
+	document.querySelectorAll(".card-preview").forEach((wrapper) => {
+		const el = wrapper as HTMLElement;
+		const iframe = el.querySelector("iframe") as HTMLIFrameElement | null;
+		if (!iframe) return;
+		const containerW = el.clientWidth || 280;
+		const containerH = el.clientHeight || 158;
+		const scale = Math.min(containerW / IFRAME_W, containerH / IFRAME_H);
+		iframe.style.transform = `scale(${scale})`;
+	});
 }
 
 export function initCatalog() {
@@ -71,6 +96,7 @@ export function initCatalog() {
 		container.className = mode === "list" ? "resources-list-view" : "resources-grid";
 		viewGrid.classList.toggle("active", mode === "grid");
 		viewList.classList.toggle("active", mode === "list");
+		requestAnimationFrame(scalePreviewIframes);
 	}
 
 	function readUrl() {
@@ -142,6 +168,7 @@ export function initCatalog() {
 			}
 
 			container.innerHTML = data.map((r: Record<string, string>) => renderCard(r)).join("");
+			scalePreviewIframes();
 			updatePagination(total, limit);
 		} catch {
 			container.innerHTML = `<p class="empty">Error al cargar recursos.</p>`;
@@ -200,6 +227,7 @@ export function initCatalog() {
 	viewList.addEventListener("click", () => setView("list"));
 	toggleSidebar?.addEventListener("click", () => sidebar.classList.toggle("open"));
 	window.addEventListener("popstate", () => { readUrl(); load(); });
+	window.addEventListener("resize", () => requestAnimationFrame(scalePreviewIframes));
 
 
 	function populateSelect(select: HTMLSelectElement, options: { value: string; label: string }[]) {
