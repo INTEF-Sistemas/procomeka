@@ -25,27 +25,28 @@
       // Inject base tag
       html = html.replace('<head>', '<head>\n<base href="' + editorBase + '/">');
 
-      // Inject embedding config (only set initialProjectUrl if elpxUrl is provided)
+      // Inject embedding config WITHOUT untrusted data (elpxUrl sent via postMessage later)
       var configObj = 'basePath: "' + editorBase + '",' +
         'parentOrigin: "' + window.location.origin + '",' +
         'trustedOrigins: ["' + window.location.origin + '"],' +
         'hideUI: { fileMenu: true, saveButton: true, userMenu: true }';
-      if (elpxUrl) {
-        configObj += ', initialProjectUrl: ' + JSON.stringify(elpxUrl);
-      }
       var config = '<script>window.__EXE_EMBEDDING_CONFIG__ = {' + configObj + '};<\/script>';
       html = html.replace('</head>', config + '\n</head>');
 
-      // Inject bridge script
-      var bridge = '<script>' + document.getElementById('bridge-src').textContent + '<\/script>';
-      html = html.replace('</body>', bridge + '\n</body>');
-
-      // Write to iframe
+      // Write to iframe (no untrusted data or DOM text in the HTML string)
       var frame = document.getElementById('editor-frame');
       var doc = frame.contentDocument || frame.contentWindow.document;
       doc.open();
       doc.write(html);
       doc.close();
+
+      // Inject bridge script as a DOM element (avoids reinterpreting DOM text as HTML)
+      var bridgeSrc = document.getElementById('bridge-src');
+      if (bridgeSrc && doc.body) {
+        var s = doc.createElement('script');
+        s.text = bridgeSrc.textContent || '';
+        doc.body.appendChild(s);
+      }
     });
 
   // Forward postMessages from editor iframe to our parent
